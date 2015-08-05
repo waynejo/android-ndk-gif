@@ -35,7 +35,7 @@ private:
 
 	bool readLSD(DataBlock* dataBlock);
 	bool readColorTable(DataBlock* dataBlock, unsigned int* colorTable, int ncolors);
-	bool readHeader(DataBlock dataBlock);
+	bool readHeader(DataBlock* dataBlock);
 
 	bool readContents(DataBlock* dataBlock);
 	bool skip(DataBlock* dataBlock);

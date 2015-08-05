@@ -7,10 +7,10 @@ GifDecoder::GifDecoder(void)
 	pixels = NULL;
 }
 
-
 GifDecoder::~GifDecoder(void)
 {
 	if (NULL != pixels) {
+		delete[] pixels;
 		pixels = NULL;
 	}
 	for (std::vector<GifFrame>::iterator i = frames.begin(); i != frames.end(); ++i) {
@@ -43,9 +43,14 @@ bool GifDecoder::load(const char* fileName)
 	fread(data, fileSize, 1, fp);
 	fclose(fp);
 
-	if (!readHeader(DataBlock(data, fileSize))) {
+	DataBlock dataBlock(data, fileSize);
+	if (!readHeader(&dataBlock)) {
 		return false;
 	}
+	bool result = readContents(&dataBlock);
+	delete[] data;
+
+	return result;
 }
 
 bool GifDecoder::readLSD(DataBlock* dataBlock) {
@@ -80,25 +85,26 @@ bool GifDecoder::readColorTable(DataBlock* dataBlock, unsigned int* colorTable, 
 	}
 }
 
-bool GifDecoder::readHeader(DataBlock dataBlock) {
+bool GifDecoder::readHeader(DataBlock* dataBlock) {
 	unsigned char buffer[6];
-	if (!dataBlock.read(buffer, 6)) {
+	if (!dataBlock->read(buffer, 6)) {
 		return false;
 	}
 	if (0 != memcmp("GIF", buffer, 3)) {
 		return false;
 	}
 
-    if (!readLSD(&dataBlock)) {
+    if (!readLSD(dataBlock)) {
 		return false;
 	}
 
 	if (gctFlag) {
-		if (!readColorTable(&dataBlock, gct, gctSize)) {
+		if (!readColorTable(dataBlock, gct, gctSize)) {
 			return false;
 		}
 		bgColor = 0xFF000000 | gct[bgIndex];
  	}
+	return true;
 }
 
 bool GifDecoder::readContents(DataBlock* dataBlock) {
@@ -224,7 +230,6 @@ bool GifDecoder::readGraphicControlExt(DataBlock* dataBlock)
 
 bool GifDecoder::readBitmap(DataBlock* dataBlock)
 {
-	unsigned short ix, iy, iw, ih;
 	unsigned char packed;
 	if (!dataBlock->read(&ix) || !dataBlock->read(&iy) ||  // (sub)image position & size
 		!dataBlock->read(&iw) || !dataBlock->read(&ih) || !dataBlock->read(&packed, 1)) {
@@ -277,6 +282,7 @@ void GifDecoder::resetFrame()
 	lry = iy;
 	lrw = iw;
 	lrh = ih;
+	//lastBitmap = image;
 	lastBgColor = bgColor;
 	dispose = 0;
 	transparency = false;
@@ -292,7 +298,7 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 	if (NULL != pixels) {
 		delete[] pixels;
 	}
-	unsigned char* pixels = new unsigned char[npix]; // allocate new pixel array
+	pixels = new unsigned char[npix]; // allocate new pixel array
 	unsigned short prefix[MAX_STACK_SIZE];
 	unsigned char suffix[MAX_STACK_SIZE];
 	unsigned char pixelStack[MAX_STACK_SIZE + 1];
@@ -392,7 +398,7 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 void GifDecoder::setPixels(unsigned int* act)
 {
 	unsigned int* dest = new unsigned int[width * height * 4];
-	const unsigned int* lastBitmap;
+	const unsigned int* lastBitmap = NULL;
 	// fill in starting image contents based on last image's dispose code
 	if (lastDispose > 0) {
 		if (lastDispose == 3) {
