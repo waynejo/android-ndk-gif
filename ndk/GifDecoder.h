@@ -7,7 +7,7 @@
 class GifDecoder
 {
 private:
-	static const int MAX_STACK_SIZE = 4096;
+	static const int MAX_STACK_SIZE = 8192;
 
 	std::vector<GifFrame> frames;
 	unsigned short width;
@@ -26,12 +26,16 @@ private:
 	bool transparency; // use transparent color
 	unsigned short delay;
 	unsigned char transIndex;
-	unsigned int frameCount;
+	int frameCount;
 	unsigned char* pixels;
 
 	unsigned int lastDispose;
 	unsigned short lrx, lry, lrw, lrh;
 	unsigned int lastBgColor;
+	unsigned int* image;
+	const unsigned int* lastBitmap;
+
+	void init();
 
 	bool readLSD(DataBlock* dataBlock);
 	bool readColorTable(DataBlock* dataBlock, unsigned int* colorTable, int ncolors);
@@ -53,5 +57,8 @@ public:
 
 	bool load(const char* fileName);
 	const unsigned int* getFrame(int n);
+
+	unsigned int getWidth();
+	unsigned int getHeight();
 };
 

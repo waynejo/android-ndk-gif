@@ -2,12 +2,12 @@
 #include "GifDecoder.h"
 #include "DataBlock.h"
 
-GifDecoder::GifDecoder(void)
+GifDecoder::GifDecoder()
 {
 	pixels = NULL;
 }
 
-GifDecoder::~GifDecoder(void)
+GifDecoder::~GifDecoder()
 {
 	if (NULL != pixels) {
 		delete[] pixels;
@@ -18,7 +18,7 @@ GifDecoder::~GifDecoder(void)
 	}
 }
 
-bool GifDecoder::load(const char* fileName) 
+void GifDecoder::init()
 {
 	loopCount = 1;
 	dispose = 0;
@@ -32,6 +32,14 @@ bool GifDecoder::load(const char* fileName)
 		delete[] pixels;
 		pixels = NULL;
 	}
+	image = NULL;
+	lastBitmap = NULL;
+}
+
+bool GifDecoder::load(const char* fileName) 
+{
+	init();
+
 	FILE* fp = fopen(fileName, "rb");
 	if (NULL == fp) {
 		return false;
@@ -74,6 +82,7 @@ bool GifDecoder::readLSD(DataBlock* dataBlock) {
 	if (!dataBlock->read(&pixelAspect, 1)) { // pixel aspect ratio
 		return false;
 	}
+	return true;
 }
 
 bool GifDecoder::readColorTable(DataBlock* dataBlock, unsigned int* colorTable, int ncolors) {
@@ -83,6 +92,7 @@ bool GifDecoder::readColorTable(DataBlock* dataBlock, unsigned int* colorTable, 
 		}
 		colorTable[i] |= 0xFF000000;
 	}
+	return true;
 }
 
 bool GifDecoder::readHeader(DataBlock* dataBlock) {
@@ -237,7 +247,7 @@ bool GifDecoder::readBitmap(DataBlock* dataBlock)
 	}
 
 	bool lctFlag = (packed & 0x80) != 0; // 1 - local color table flag interlace
-	int lctSize = 2 << ((packed & 0x07) + 1);
+	int lctSize = 2 << (packed & 0x07);
 	// 3 - sort flag
 	// 4-5 - reserved lctSize = 2 << (packed & 7); // 6-8 - local color
 	// table size
@@ -273,6 +283,7 @@ bool GifDecoder::readBitmap(DataBlock* dataBlock)
 		act[transIndex] = save;
 	}
 	resetFrame();
+	return true;
 }
 
 void GifDecoder::resetFrame()
@@ -282,7 +293,7 @@ void GifDecoder::resetFrame()
 	lry = iy;
 	lrw = iw;
 	lrh = ih;
-	//lastBitmap = image;
+	lastBitmap = image;
 	lastBgColor = bgColor;
 	dispose = 0;
 	transparency = false;
@@ -295,10 +306,13 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 	int npix = iw * ih;
 	int available, clear, code_mask, code_size, end_of_information, in_code, old_code, bits, code, i, datum, first, top, bi, pi;
 	unsigned char count, data_size;
-	if (NULL != pixels) {
+	if (NULL == pixels) {
+		pixels = new unsigned char[npix]; // allocate new pixel array
+	} else if (lrw != iw || lrh != ih) {
 		delete[] pixels;
+		pixels = new unsigned char[npix];
 	}
-	pixels = new unsigned char[npix]; // allocate new pixel array
+	
 	unsigned short prefix[MAX_STACK_SIZE];
 	unsigned char suffix[MAX_STACK_SIZE];
 	unsigned char pixelStack[MAX_STACK_SIZE + 1];
@@ -333,14 +347,14 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 					}
 					bi = 0;
 				}
-				datum += (((int) block[bi]) & 0xff) << bits;
+				datum |= (((int) block[bi]) & 0xff) << bits;
 				bits += 8;
 				bi++;
 				count--;
 				continue;
 			}
 			// Get the next code.
-			code = datum & code_mask;
+			code = (datum & code_mask);
 			datum >>= code_size;
 			bits -= code_size;
 			// Interpret the code
@@ -363,21 +377,21 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 			}
 			in_code = code;
 			if (code == available) {
-				pixelStack[top++] = (byte) first;
+				pixelStack[top++] = first;
 				code = old_code;
 			}
 			while (code > clear) {
 				pixelStack[top++] = suffix[code];
 				code = prefix[code];
 			}
-			first = ((int) suffix[code]) & 0xff;
+			first = ((int)suffix[code]) & 0xff;
 			// Add a new string to the string table,
 			if (available >= MAX_STACK_SIZE) {
 				break;
 			}
-			pixelStack[top++] = (byte) first;
-			prefix[available] = (short) old_code;
-			suffix[available] = (byte) first;
+			pixelStack[top++] = first;
+			prefix[available] = old_code;
+			suffix[available] = first;
 			available++;
 			if (((available & code_mask) == 0) && (available < MAX_STACK_SIZE)) {
 				code_size++;
@@ -393,12 +407,13 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 	for (i = pi; i < npix; i++) {
 		pixels[i] = 0; // clear missing pixels
 	}
+	return true;
 }
 
 void GifDecoder::setPixels(unsigned int* act)
 {
-	unsigned int* dest = new unsigned int[width * height * 4];
-	const unsigned int* lastBitmap = NULL;
+	int pixelNum = width * height;
+	unsigned int* dest = new unsigned int[pixelNum];
 	// fill in starting image contents based on last image's dispose code
 	if (lastDispose > 0) {
 		if (lastDispose == 3) {
@@ -411,7 +426,7 @@ void GifDecoder::setPixels(unsigned int* act)
 			}
 		}
 		if (lastBitmap != NULL) {
-			memcpy(dest, lastBitmap, width * height * 4);
+			memcpy(dest, lastBitmap, pixelNum * 4);
 			// copy pixels
 			if (lastDispose == 2) {
 				// fill last image rect area with background color
@@ -478,6 +493,7 @@ void GifDecoder::setPixels(unsigned int* act)
 		}
 	}
 	frames.push_back(GifFrame(dest));
+	image = dest;
 }
 
 const unsigned int* GifDecoder::getFrame(int n)
@@ -486,4 +502,14 @@ const unsigned int* GifDecoder::getFrame(int n)
 		return NULL;
 	n = n % frameCount;
 	return frames[n].data;
+}
+
+unsigned int GifDecoder::getWidth()
+{
+	return width;
+}
+
+unsigned int GifDecoder::getHeight()
+{
+	return height;
 }
