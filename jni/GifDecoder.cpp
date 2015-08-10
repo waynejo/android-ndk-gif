@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "GifDecoder.h"
 #include "DataBlock.h"
 
@@ -502,6 +501,11 @@ const unsigned int* GifDecoder::getFrame(int n)
 		return NULL;
 	n = n % frameCount;
 	return frames[n].data;
+}
+
+unsigned int GifDecoder::getFrameCount()
+{
+    return frameCount;
 }
 
 unsigned int GifDecoder::getWidth()

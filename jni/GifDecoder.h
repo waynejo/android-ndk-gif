@@ -58,6 +58,7 @@ public:
 	bool load(const char* fileName);
 	const unsigned int* getFrame(int n);
 
+    unsigned int getFrameCount();
 	unsigned int getWidth();
 	unsigned int getHeight();
 };
