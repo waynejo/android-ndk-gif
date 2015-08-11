@@ -1,12 +1,15 @@
 #include "com_waynejo_androidndkgif_GifDecoder.h"
 #include "GifDecoder.h"
+#include <string.h>
+#include <wchar.h>
+#include <android/bitmap.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 JNIEXPORT jlong JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeInit
-  (JNIEnv *, jobject)
+  (JNIEnv *env, jobject)
 {
     return (jlong)new GifDecoder();
 }
@@ -18,9 +21,12 @@ JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeClose
 }
 
 JNIEXPORT jboolean JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeLoad
-  (JNIEnv *, jobject, jlong handle, jstring fileName)
+  (JNIEnv * env, jobject, jlong handle, jstring fileName)
 {
-    return ((GifDecoder*)handle)->load("");
+    const char* fileNameChars = env->GetStringUTFChars(fileName, 0);
+    bool result = ((GifDecoder*)handle)->load(fileNameChars);
+    env->ReleaseStringUTFChars(fileName, fileNameChars);
+    return result;
 }
 
 JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFrameCount
@@ -30,9 +36,34 @@ JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFrameC
 }
 
 JNIEXPORT jobject JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFrame
-  (JNIEnv *, jobject, jlong handle, jint)
+  (JNIEnv *env, jobject, jlong handle, jint idx)
 {
-    return 0;
+    GifDecoder* decoder = (GifDecoder*)handle;
+    int imgWidth = decoder->getWidth();
+    int imgHeight = decoder->getHeight();
+
+    // Creaing Bitmap Config Class
+    jclass bmpCfgCls = env->FindClass("android/graphics/Bitmap$Config");
+    jmethodID bmpClsValueOfMid = env->GetStaticMethodID(bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
+    jobject jBmpCfg = env->CallStaticObjectMethod(bmpCfgCls, bmpClsValueOfMid, env->NewStringUTF("ARGB_8888"));
+
+    // Creating a Bitmap Class
+    jclass bmpCls = env->FindClass("android/graphics/Bitmap");
+    jmethodID createBitmapMid = env->GetStaticMethodID(bmpCls, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+    jobject jBmpObj = env->CallStaticObjectMethod(bmpCls, createBitmapMid, imgWidth, imgHeight, jBmpCfg);
+
+    void* bitmapPixels;
+    if (AndroidBitmap_lockPixels(env, jBmpObj, &bitmapPixels) < 0) {
+        return 0;
+    }
+    uint32_t* src = (uint32_t*) bitmapPixels;
+    uint32_t* tempPixels = new unsigned int[imgWidth * imgHeight];
+    int stride = imgWidth * 4;
+    int pixelsCount = stride * imgHeight;
+    memcpy(bitmapPixels, decoder->getFrame(idx), pixelsCount);
+    AndroidBitmap_unlockPixels(env, jBmpObj);
+
+    return jBmpObj;
 }
 
 JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetWidth
