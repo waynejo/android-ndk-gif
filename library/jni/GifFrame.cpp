@@ -1,7 +1,7 @@
 #include "GifFrame.h"
 
 
-GifFrame::GifFrame(unsigned int* data) : data(data)
+GifFrame::GifFrame(unsigned int* data, int delayMs) : data(data), delayMs(delayMs)
 {
 }
 

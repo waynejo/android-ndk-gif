@@ -49,6 +49,14 @@ JNIEXPORT jobject JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFra
 
 /*
  * Class:     com_waynejo_androidndkgif_GifDecoder
+ * Method:    nativeGetDelay
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetDelay
+        (JNIEnv *, jobject, jlong, jint);
+
+/*
+ * Class:     com_waynejo_androidndkgif_GifDecoder
  * Method:    nativeGetWidth
  * Signature: (J)I
  */

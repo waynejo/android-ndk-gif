@@ -56,9 +56,10 @@ public:
 	~GifDecoder(void);
 
 	bool load(const char* fileName);
+	unsigned int getFrameCount();
 	const unsigned int* getFrame(int n);
+	unsigned int getDelay(int n);
 
-    unsigned int getFrameCount();
 	unsigned int getWidth();
 	unsigned int getHeight();
 };

@@ -385,12 +385,11 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 			}
 			first = (unsigned int)suffix[code];
 			// Add a new string to the string table,
-			if (available >= MAX_STACK_SIZE) {
-				break;
-			}
 			pixelStack[top++] = first;
-			prefix[available] = old_code;
-			suffix[available] = first;
+			if (available < MAX_STACK_SIZE) {
+				prefix[available] = old_code;
+				suffix[available] = first;
+			}
 			available++;
 			if (((available & code_mask) == 0) && (available < MAX_STACK_SIZE)) {
 				code_size++;
@@ -491,21 +490,29 @@ void GifDecoder::setPixels(unsigned int* act)
 			}
 		}
 	}
-	frames.push_back(GifFrame(dest));
+	frames.push_back(GifFrame(dest, delay));
 	image = dest;
+}
+
+unsigned int GifDecoder::getFrameCount()
+{
+	return frameCount;
 }
 
 const unsigned int* GifDecoder::getFrame(int n)
 {
 	if (frameCount <= 0)
-		return NULL;
+		return 0;
 	n = n % frameCount;
 	return frames[n].data;
 }
 
-unsigned int GifDecoder::getFrameCount()
+unsigned int GifDecoder::getDelay(int n)
 {
-    return frameCount;
+	if (frameCount <= 0)
+		return 0;
+	n = n % frameCount;
+	return frames[n].delayMs;
 }
 
 unsigned int GifDecoder::getWidth()

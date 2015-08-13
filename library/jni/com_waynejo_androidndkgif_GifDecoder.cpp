@@ -66,6 +66,12 @@ JNIEXPORT jobject JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFra
     return jBmpObj;
 }
 
+JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetDelay
+        (JNIEnv *, jobject, jlong handle, jint idx)
+{
+    return ((GifDecoder*)handle)->getDelay(idx);
+}
+
 JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetWidth
   (JNIEnv *, jobject, jlong handle)
 {
