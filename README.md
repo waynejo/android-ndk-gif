@@ -22,6 +22,21 @@ dependencies {
 }
 ```
 
+Android Java Code
+--------
+
+```java
+...
+
+GifDecoder gifDecoder = new GifDecoder();
+boolean isSucceeded = gifDecoder.load(destFile);
+if (isSucceeded) {
+    for (int i = 0; i < gifDecoder.frameNum(); ++i) {
+        Bitmap bitmap = gifDecoder.frame(i);
+    }
+}
+```
+
 # Reference
 
 * GIF Decoder is originally based on https://code.google.com/p/android-gifview/ .
