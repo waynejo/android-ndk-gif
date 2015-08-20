@@ -3,6 +3,14 @@ Android NDK GIF Library
 
 GIF library built with ndk and gradle in aar format for usage with android gradle build system.
 
+Feature
+========
+
+0.1.0
+--------
+
+Support Decoding.
+
 How to use
 ========
 
