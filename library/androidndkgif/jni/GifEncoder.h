@@ -8,6 +8,7 @@ private:
 	unsigned int* lastPixels;
 
 	void removeSamePixels(unsigned int* dst, unsigned int* src1, unsigned int* src2);
+	void computeColorTable(unsigned int* pixels);
 public:
 	GifEncoder();
 
