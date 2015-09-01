@@ -4,15 +4,15 @@
 using namespace std;
 
 enum COLOR {
-	RED,
+	RED = 0,
 	GREEN,
-	BLUE
+	BLUE,
+	COLOR_MAX
 };
 
 struct Cube {
-	int min;
-	int max;
-	COLOR color;
+	int cMin[COLOR_MAX];
+	int cMax[COLOR_MAX];
 };
 
 GifEncoder::GifEncoder()
@@ -49,26 +49,63 @@ void GifEncoder::removeSamePixels(unsigned int* dst, unsigned int* src1, unsigne
 
 void GifEncoder::computeColorTable(unsigned int* pixels)
 {
-	int r[256], g[256], b[256];
+	int colors[COLOR_MAX][256];
 	int pixelNum = width * height;
 	unsigned int* last = pixels + pixelNum;
 	while (last != pixels) {
-		++r[(*pixels) & 0xFF];
-		++g[((*pixels) >> 8) & 0xFF];
-		++b[((*pixels) >> 16) & 0xFF];
+		++colors[RED][(*pixels) & 0xFF];
+		++colors[GREEN][((*pixels) >> 8) & 0xFF];
+		++colors[BLUE][((*pixels) >> 16) & 0xFF];
 	}
 
 	Cube cubes[256];
 	int cubeIndex = 0;
 	Cube* cube = &cubes[cubeIndex];
-	cube->min = 255;
-	cube->max = 0;
+	for (int i = 0; i < COLOR_MAX; ++i) {
+		cube->cMin[i] = 255;
+		cube->cMax[i] = 0;
+	}
 	for (int i = 0; i < 256; ++i) {
-		if (0 == r[i]) {
-			continue;
+		for (int color = 0; color < COLOR_MAX; ++color) {
+			if (0 != colors[color][i]) {
+				cube->cMax[color] = cube->cMax[color] < i ? i : cube->cMax[color];
+				cube->cMin[color] = cube->cMin[color] > i ? i : cube->cMin[color];
+			}
 		}
-		cube->max = cube->max < i ? i : cube->max;
-		cube->min = cube->min > i ? i : cube->min;
+	}
+	for (; cubeIndex < 255; ++cubeIndex) {
+		int maxDiff = 0;
+		int maxColor = GREEN;
+		Cube* maxCube = cubes;
+		for (int i = 0; i < cubeIndex; ++i) {
+			Cube* cube = &cubes[i];
+			int color = GREEN;
+			int diff = cube->cMax[GREEN] - cube->cMin[GREEN];
+			if (cube->cMax[RED] - cube->cMin[RED] > diff) {
+				diff = cube->cMax[RED] - cube->cMin[RED];
+				color = RED;
+			}
+			if (cube->cMax[BLUE] - cube->cMin[BLUE] > diff) {
+				diff = cube->cMax[BLUE] - cube->cMin[BLUE];
+				color = BLUE;
+			}
+			if (maxDiff < diff) {
+				maxDiff = diff;
+				maxCube = cube;
+				maxColor = color;
+			}
+		}
+		Cube* nextCube = &cubes[cubeIndex + 1];
+		for (int color = 0; color < COLOR_MAX; ++color) {
+			if (color == maxColor) {
+				nextCube->cMin[color] = maxCube->cMin[color] + (maxCube->cMax[color] - maxCube->cMin[color] + 1) / 2;
+				nextCube->cMax[color] = maxCube->cMax[color];
+			} else {
+				nextCube->cMin[color] = maxCube->cMin[color];
+				nextCube->cMax[color] = maxCube->cMax[color];
+			}
+		}
+		maxCube->cMax[maxColor] = nextCube->cMin[maxColor] - 1;
 	}
 }
 
@@ -85,6 +122,6 @@ void GifEncoder::encodeFrame(unsigned int* pixels, int delayMs)
 
 	memcpy(lastPixels, pixels, pixelNum * sizeof(unsigned int));
 	++frameNum;
-
+	
 	delete[] frame;
 }
