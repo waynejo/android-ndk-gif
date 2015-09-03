@@ -60,7 +60,8 @@ bool GifDecoder::load(const char* fileName)
 	return result;
 }
 
-bool GifDecoder::readLSD(DataBlock* dataBlock) {
+bool GifDecoder::readLSD(DataBlock* dataBlock)
+{
 	// logical screen size
 	if (!dataBlock->read(&width) || !dataBlock->read(&height)) {
 		return false;
@@ -84,7 +85,8 @@ bool GifDecoder::readLSD(DataBlock* dataBlock) {
 	return true;
 }
 
-bool GifDecoder::readColorTable(DataBlock* dataBlock, unsigned int* colorTable, int ncolors) {
+bool GifDecoder::readColorTable(DataBlock* dataBlock, unsigned int* colorTable, int ncolors)
+{
 	for (int i = 0; i < ncolors; ++i) {
 		if (!dataBlock->read((unsigned char*)(colorTable + i), 3)) {
 			return false;
@@ -94,7 +96,8 @@ bool GifDecoder::readColorTable(DataBlock* dataBlock, unsigned int* colorTable, 
 	return true;
 }
 
-bool GifDecoder::readHeader(DataBlock* dataBlock) {
+bool GifDecoder::readHeader(DataBlock* dataBlock)
+{
 	unsigned char buffer[6];
 	if (!dataBlock->read(buffer, 6)) {
 		return false;
@@ -116,7 +119,8 @@ bool GifDecoder::readHeader(DataBlock* dataBlock) {
 	return true;
 }
 
-bool GifDecoder::readContents(DataBlock* dataBlock) {
+bool GifDecoder::readContents(DataBlock* dataBlock)
+{
 	// read GIF file content blocks
 	unsigned char code;
 	while (true) {

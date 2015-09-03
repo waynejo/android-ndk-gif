@@ -14,18 +14,22 @@ struct Cube {
 
 class GifEncoder {
 private:
-	int width;
-	int height;
+	unsigned short width;
+	unsigned short height;
 	int frameNum;
 	unsigned int* lastPixels;
+	FILE* fp;
 
 	void removeSamePixels(unsigned int* dst, unsigned int* src1, unsigned int* src2);
 	void computeColorTable(unsigned int* pixels);
 	void mapColor(Cube* cubes, int cubeNum, unsigned int* pixels);
+
+	void writeHeader();
+	bool writeLSD();
 public:
 	GifEncoder();
 
-	void init(int width, int height);
+	void init(unsigned short width, unsigned short height, const char* fileName);
 	void release();
 
 	void encodeFrame(unsigned int* pixels, int delayMs);

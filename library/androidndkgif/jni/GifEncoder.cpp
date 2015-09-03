@@ -11,9 +11,10 @@ GifEncoder::GifEncoder()
 
 	frameNum = 0;
 	lastPixels = NULL;
+	fp = NULL;
 }
 
-void GifEncoder::init(int width, int height)
+void GifEncoder::init(unsigned short width, unsigned short height, const char* fileName)
 {
 	this->width = width;
 	this->height = height;
@@ -22,12 +23,19 @@ void GifEncoder::init(int width, int height)
 		delete[] lastPixels;
 	}
 	lastPixels = new unsigned int[width * height];
+
+	fp = fopen(fileName, "wb");
+	writeHeader();
 }
 
 void GifEncoder::release()
 {
 	if (NULL != lastPixels) {
 		delete[] lastPixels;
+	}
+
+	if (NULL != fp) {
+		fclose(fp);
 	}
 }
 
@@ -132,6 +140,35 @@ void GifEncoder::mapColor(Cube* cubes, int cubeNum, unsigned int* pixels)
 		(*pixels) = (blue << 16) | (green << 8) | red;
 		++pixels;
 	}
+}
+
+void GifEncoder::writeHeader()
+{
+	fwrite("GIF89a", 6, 1, fp);
+	writeLSD();
+}
+
+bool GifEncoder::writeLSD()
+{
+	// logical screen size
+	fwrite(&width, 2, 1, fp);
+	fwrite(&height, 2, 1, fp);
+
+	// packed fields
+	unsigned char gctFlag = 0; // 1 : global color table flag
+	unsigned char colorResolution = 8; // only 8 bit
+	unsigned char oderedFlag = 0;
+	unsigned char gctSize = 0;
+	unsigned char packed = (gctFlag << 7) | ((colorResolution - 1) << 4) | (oderedFlag << 3) | gctSize;
+	fwrite(&packed, 1, 1, fp);
+
+	unsigned char backgroundColorIndex = 0;
+	fwrite(&backgroundColorIndex, 1, 1, fp);
+
+	unsigned char aspectRatio = 0;
+	fwrite(&aspectRatio, 1, 1, fp);
+
+	return true;
 }
 
 void GifEncoder::encodeFrame(unsigned int* pixels, int delayMs)
