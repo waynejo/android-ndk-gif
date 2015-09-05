@@ -26,6 +26,7 @@ void GifEncoder::init(unsigned short width, unsigned short height, const char* f
 
 	fp = fopen(fileName, "wb");
 	writeHeader();
+	writeContents();
 }
 
 void GifEncoder::release()
@@ -168,6 +169,21 @@ bool GifEncoder::writeLSD()
 	unsigned char aspectRatio = 0;
 	fwrite(&aspectRatio, 1, 1, fp);
 
+	return true;
+}
+
+bool GifEncoder::writeContents()
+{
+	writeNetscapeExt();
+
+	return true;
+}
+
+bool GifEncoder::writeNetscapeExt()
+{
+	//                                   code extCode,                                                            size,       loop count, end
+	const unsigned char netscapeExt[] = {0x21, 0xFF, 0x0B, 'N', 'E', 'T', 'S', 'C', 'A', 'P', 'E', '2', '.', '0', 0x03, 0x01, 0x00, 0x00, 0x00};
+	fwrite(netscapeExt, sizeof(netscapeExt), 1, fp);
 	return true;
 }
 

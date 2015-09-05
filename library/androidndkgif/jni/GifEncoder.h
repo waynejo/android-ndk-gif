@@ -26,6 +26,8 @@ private:
 
 	void writeHeader();
 	bool writeLSD();
+	bool writeContents();
+	bool writeNetscapeExt();
 public:
 	GifEncoder();
 
