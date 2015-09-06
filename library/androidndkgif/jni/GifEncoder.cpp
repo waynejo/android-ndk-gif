@@ -176,6 +176,9 @@ bool GifEncoder::writeContents()
 {
 	writeNetscapeExt();
 
+	writeGraphicControlExt();
+	writeFrame();
+
 	return true;
 }
 
@@ -184,6 +187,41 @@ bool GifEncoder::writeNetscapeExt()
 	//                                   code extCode,                                                            size,       loop count, end
 	const unsigned char netscapeExt[] = {0x21, 0xFF, 0x0B, 'N', 'E', 'T', 'S', 'C', 'A', 'P', 'E', '2', '.', '0', 0x03, 0x01, 0x00, 0x00, 0x00};
 	fwrite(netscapeExt, sizeof(netscapeExt), 1, fp);
+	return true;
+}
+
+bool GifEncoder::writeGraphicControlExt()
+{
+	unsigned char disposalMethod = 1; // Do not dispose
+	unsigned char userInputFlag = 0; // User input is not expected.
+	unsigned char transparencyFlag = 1; // Transparent Index is given.
+
+	unsigned char packed = (disposalMethod << 2) | (userInputFlag << 1) | transparencyFlag;
+	//                                                     size, packed, delay(2), transIndex, terminator
+	const unsigned char graphicControlExt[] = {0x21, 0xF9, 0x04, packed, 0x00, 0x0a, 0x00, 0x00};
+	fwrite(graphicControlExt, sizeof(graphicControlExt), 1, fp);
+	return true;
+}
+
+bool GifEncoder::writeFrame()
+{
+	unsigned char code = 0x2C;
+	fwrite(&code, 1, 1, fp);
+	unsigned short ix = 0;
+	unsigned short iy = 0;
+	unsigned short iw = width;
+	unsigned short ih = height;
+	unsigned char localColorTableFlag = 1;
+	unsigned char interlaceFlag = 0;
+	unsigned char sortFlag = 0;
+	unsigned char sizeOfLocalColorTable = 7;
+	unsigned char packed = (localColorTableFlag << 7) | (interlaceFlag << 6) | (sortFlag << 5) | sizeOfLocalColorTable;
+	fwrite(&ix, 2, 1, fp);
+	fwrite(&iy, 2, 1, fp);
+	fwrite(&iw, 2, 1, fp);
+	fwrite(&ih, 2, 1, fp);
+	fwrite(&packed, 1, 1, fp);
+
 	return true;
 }
 

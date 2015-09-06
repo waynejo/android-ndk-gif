@@ -28,6 +28,8 @@ private:
 	bool writeLSD();
 	bool writeContents();
 	bool writeNetscapeExt();
+	bool writeGraphicControlExt();
+	bool writeFrame();
 public:
 	GifEncoder();
 
