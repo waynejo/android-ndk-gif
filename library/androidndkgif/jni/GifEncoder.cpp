@@ -26,7 +26,6 @@ void GifEncoder::init(unsigned short width, unsigned short height, const char* f
 
 	fp = fopen(fileName, "wb");
 	writeHeader();
-	writeContents();
 }
 
 void GifEncoder::release()
@@ -44,7 +43,7 @@ void GifEncoder::removeSamePixels(unsigned int* dst, unsigned int* src1, unsigne
 {
 }
 
-void GifEncoder::computeColorTable(unsigned int* pixels)
+void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 {
 	int colors[COLOR_MAX][256];
 	int pixelNum = width * height;
@@ -57,14 +56,13 @@ void GifEncoder::computeColorTable(unsigned int* pixels)
 		++pixels;
 	}
 
-	Cube cubes[256];
 	int cubeIndex = 0;
 	Cube* cube = &cubes[cubeIndex];
 	for (int i = 0; i < COLOR_MAX; ++i) {
 		cube->cMin[i] = 255;
 		cube->cMax[i] = 0;
 	}
-	for (int i = 0; i < 256; ++i) {
+	for (unsigned int i = 0; i < 256; ++i) {
 		for (int color = 0; color < COLOR_MAX; ++color) {
 			if (0 != colors[color][i]) {
 				cube->cMax[color] = cube->cMax[color] < i ? i : cube->cMax[color];
@@ -73,13 +71,13 @@ void GifEncoder::computeColorTable(unsigned int* pixels)
 		}
 	}
 	for (; cubeIndex < 255; ++cubeIndex) {
-		int maxDiff = 0;
+		unsigned int maxDiff = 0;
 		int maxColor = GREEN;
 		Cube* maxCube = cubes;
 		for (int i = 0; i < cubeIndex; ++i) {
 			Cube* cube = &cubes[i];
 			int color = GREEN;
-			int diff = cube->cMax[GREEN] - cube->cMin[GREEN];
+			unsigned int diff = cube->cMax[GREEN] - cube->cMin[GREEN];
 			if (cube->cMax[RED] - cube->cMin[RED] > diff) {
 				diff = cube->cMax[RED] - cube->cMin[RED];
 				color = RED;
@@ -105,6 +103,12 @@ void GifEncoder::computeColorTable(unsigned int* pixels)
 			}
 		}
 		maxCube->cMax[maxColor] = nextCube->cMin[maxColor] - 1;
+	}
+	for (unsigned int i = 0; i < 256; ++i) {
+		Cube* cube = &cubes[i];
+		for (int color = 0; color < COLOR_MAX; ++color) {
+			cube->color[color] = cube->cMin[color] + (cube->cMax[color] - cube->cMin[color]) / 2;
+		}
 	}
 	mapColor(cubes, 256, pixelBegin);
 }
@@ -135,9 +139,9 @@ void GifEncoder::mapColor(Cube* cubes, int cubeNum, unsigned int* pixels)
 			}
 			++cube;
 		}
-		unsigned int blue = cube->cMin[BLUE] + (cube->cMax[BLUE] - cube->cMin[BLUE]) / 2;
-		unsigned int green = cube->cMin[GREEN] + (cube->cMax[GREEN] - cube->cMin[GREEN]) / 2;
-		unsigned int red = cube->cMin[RED] + (cube->cMax[RED] - cube->cMin[RED]) / 2;
+		unsigned int blue = cube->color[BLUE];
+		unsigned int green = cube->color[GREEN];
+		unsigned int red = cube->color[RED];
 		(*pixels) = (blue << 16) | (green << 8) | red;
 		++pixels;
 	}
@@ -172,12 +176,12 @@ bool GifEncoder::writeLSD()
 	return true;
 }
 
-bool GifEncoder::writeContents()
+bool GifEncoder::writeContents(Cube* cubes)
 {
 	writeNetscapeExt();
 
 	writeGraphicControlExt();
-	writeFrame();
+	writeFrame(cubes);
 
 	return true;
 }
@@ -198,12 +202,12 @@ bool GifEncoder::writeGraphicControlExt()
 
 	unsigned char packed = (disposalMethod << 2) | (userInputFlag << 1) | transparencyFlag;
 	//                                                     size, packed, delay(2), transIndex, terminator
-	const unsigned char graphicControlExt[] = {0x21, 0xF9, 0x04, packed, 0x00, 0x0a, 0x00, 0x00};
+	const unsigned char graphicControlExt[] = {0x21, 0xF9, 0x04, packed, 0x00, 0x0a, 0xFF, 0x00};
 	fwrite(graphicControlExt, sizeof(graphicControlExt), 1, fp);
 	return true;
 }
 
-bool GifEncoder::writeFrame()
+bool GifEncoder::writeFrame(Cube* cubes)
 {
 	unsigned char code = 0x2C;
 	fwrite(&code, 1, 1, fp);
@@ -222,6 +226,20 @@ bool GifEncoder::writeFrame()
 	fwrite(&ih, 2, 1, fp);
 	fwrite(&packed, 1, 1, fp);
 
+	writeLCT(2 << sizeOfLocalColorTable, cubes);
+
+	return true;
+}
+
+bool GifEncoder::writeLCT(int colorNum, Cube* cubes)
+{
+	unsigned int color;
+	Cube* cube;
+	for (int i = 0; i < colorNum; ++i) {
+		cube = cubes + i;
+		color = cube->color[RED] | (cube->color[GREEN] << 8) | (cube->color[BLUE] << 16);
+		fwrite(&color, 3, 1, fp);
+	}
 	return true;
 }
 
@@ -234,7 +252,9 @@ void GifEncoder::encodeFrame(unsigned int* pixels, int delayMs)
 	} else {
 		removeSamePixels(frame, lastPixels, pixels);
 	}
-	computeColorTable(pixels);
+	Cube cubes[256];
+	computeColorTable(pixels, cubes);
+	writeContents(cubes);
 
 	memcpy(lastPixels, pixels, pixelNum * sizeof(unsigned int));
 	++frameNum;

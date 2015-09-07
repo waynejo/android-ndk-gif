@@ -10,6 +10,7 @@ enum COLOR {
 struct Cube {
 	unsigned int cMin[COLOR_MAX];
 	unsigned int cMax[COLOR_MAX];
+	unsigned int color[COLOR_MAX];
 };
 
 class GifEncoder {
@@ -21,15 +22,16 @@ private:
 	FILE* fp;
 
 	void removeSamePixels(unsigned int* dst, unsigned int* src1, unsigned int* src2);
-	void computeColorTable(unsigned int* pixels);
+	void computeColorTable(unsigned int* pixels, Cube* cubes);
 	void mapColor(Cube* cubes, int cubeNum, unsigned int* pixels);
 
 	void writeHeader();
 	bool writeLSD();
-	bool writeContents();
+	bool writeContents(Cube* cubes);
 	bool writeNetscapeExt();
 	bool writeGraphicControlExt();
-	bool writeFrame();
+	bool writeFrame(Cube* cubes);
+	bool writeLCT(int colorNum, Cube* cubes);
 public:
 	GifEncoder();
 
