@@ -15,6 +15,9 @@ struct Cube {
 
 class GifEncoder {
 private:
+	static const int MAX_STACK_SIZE = 4096;
+	static const int BYTE_NUM = 256;
+
 	unsigned short width;
 	unsigned short height;
 	int frameNum;
@@ -27,11 +30,12 @@ private:
 
 	void writeHeader();
 	bool writeLSD();
-	bool writeContents(Cube* cubes);
+	bool writeContents(Cube* cubes, unsigned char* pixels);
 	bool writeNetscapeExt();
 	bool writeGraphicControlExt();
-	bool writeFrame(Cube* cubes);
+	bool writeFrame(Cube* cubes, unsigned char* pixels);
 	bool writeLCT(int colorNum, Cube* cubes);
+	bool writeBitmapData(unsigned char* pixels);
 public:
 	GifEncoder();
 

@@ -176,12 +176,12 @@ bool GifEncoder::writeLSD()
 	return true;
 }
 
-bool GifEncoder::writeContents(Cube* cubes)
+bool GifEncoder::writeContents(Cube* cubes, unsigned char* pixels)
 {
 	writeNetscapeExt();
 
 	writeGraphicControlExt();
-	writeFrame(cubes);
+	writeFrame(cubes, pixels);
 
 	return true;
 }
@@ -207,7 +207,7 @@ bool GifEncoder::writeGraphicControlExt()
 	return true;
 }
 
-bool GifEncoder::writeFrame(Cube* cubes)
+bool GifEncoder::writeFrame(Cube* cubes, unsigned char* pixels)
 {
 	unsigned char code = 0x2C;
 	fwrite(&code, 1, 1, fp);
@@ -227,7 +227,7 @@ bool GifEncoder::writeFrame(Cube* cubes)
 	fwrite(&packed, 1, 1, fp);
 
 	writeLCT(2 << sizeOfLocalColorTable, cubes);
-
+	writeBitmapData(pixels);
 	return true;
 }
 
@@ -243,6 +243,58 @@ bool GifEncoder::writeLCT(int colorNum, Cube* cubes)
 	return true;
 }
 
+bool GifEncoder::writeBitmapData(unsigned char* pixels)
+{
+	int pixelNum = width * height;
+	unsigned char* endPixels = pixels + pixelNum;
+	unsigned char dataSize = 8;
+	int codeSize = dataSize + 1;
+	int codeMask = (1 << codeSize) - 1;
+	fwrite(&dataSize, 1, 1, fp);
+
+	vector<unsigned short> lzwInfoHolder;
+	lzwInfoHolder.resize(MAX_STACK_SIZE * BYTE_NUM);
+	unsigned short* lzwInfos = &lzwInfoHolder[0];
+	
+	int clearCode = 1 << dataSize;
+	fwrite(&dataSize, 1, 1, fp);
+	
+	unsigned int infoNum = clearCode + 1;
+	unsigned short current = *pixels;
+	
+	++pixels;
+
+	unsigned short* next;
+	while (endPixels != pixels) {
+		next = &lzwInfos[current * BYTE_NUM + *pixels];
+		if (0 == *next) {
+			if (codeMask < current) {
+				++codeSize;
+				codeMask = (1 << codeSize) - 1;
+			}
+			fwrite(&current, 2, 1, fp);
+			if (MAX_STACK_SIZE == infoNum) {
+				fwrite(&clearCode, 1, 1, fp);
+				infoNum = clearCode + 1;
+				codeSize = dataSize + 1;
+				codeMask = (1 << codeSize) - 1;
+				memset(lzwInfos, 0, sizeof(MAX_STACK_SIZE * BYTE_NUM * sizeof(unsigned short)));
+			}
+			*next = infoNum;
+			++infoNum;
+			++pixels;
+			if (endPixels == pixels) {
+				break;
+			}
+			current = *pixels;
+		} else {
+			current = *next;
+		}
+		++pixels;
+	}
+	return true;
+}
+
 void GifEncoder::encodeFrame(unsigned int* pixels, int delayMs)
 {
 	int pixelNum = width * height;
@@ -254,7 +306,7 @@ void GifEncoder::encodeFrame(unsigned int* pixels, int delayMs)
 	}
 	Cube cubes[256];
 	computeColorTable(pixels, cubes);
-	writeContents(cubes);
+	writeContents(cubes, (unsigned char*)pixels);
 
 	memcpy(lastPixels, pixels, pixelNum * sizeof(unsigned int));
 	++frameNum;
