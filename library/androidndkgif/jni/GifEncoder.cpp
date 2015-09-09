@@ -1,4 +1,6 @@
+#include "stdafx.h"
 #include "GifEncoder.h"
+#include "BitWritingBlock.h"
 #include <vector>
 
 using namespace std;
@@ -250,6 +252,7 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 	unsigned char dataSize = 8;
 	int codeSize = dataSize + 1;
 	int codeMask = (1 << codeSize) - 1;
+	BitWritingBlock writingBlock;
 	fwrite(&dataSize, 1, 1, fp);
 
 	vector<unsigned short> lzwInfoHolder;
@@ -257,31 +260,30 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 	unsigned short* lzwInfos = &lzwInfoHolder[0];
 	
 	int clearCode = 1 << dataSize;
-	fwrite(&dataSize, 1, 1, fp);
-	
+	writingBlock.writeBits(clearCode, codeSize);
 	unsigned int infoNum = clearCode + 1;
 	unsigned short current = *pixels;
 	
 	++pixels;
-
+	
 	unsigned short* next;
 	while (endPixels != pixels) {
 		next = &lzwInfos[current * BYTE_NUM + *pixels];
 		if (0 == *next) {
-			if (codeMask < current) {
+			writingBlock.writeBits(current, codeSize);
+			*next = infoNum;
+			++infoNum;
+			if (codeMask < infoNum) {
 				++codeSize;
 				codeMask = (1 << codeSize) - 1;
 			}
-			fwrite(&current, 2, 1, fp);
 			if (MAX_STACK_SIZE == infoNum) {
-				fwrite(&clearCode, 1, 1, fp);
+				writingBlock.writeBits(clearCode, codeSize);
 				infoNum = clearCode + 1;
 				codeSize = dataSize + 1;
 				codeMask = (1 << codeSize) - 1;
 				memset(lzwInfos, 0, sizeof(MAX_STACK_SIZE * BYTE_NUM * sizeof(unsigned short)));
 			}
-			*next = infoNum;
-			++infoNum;
 			++pixels;
 			if (endPixels == pixels) {
 				break;
@@ -292,6 +294,7 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 		}
 		++pixels;
 	}
+	writingBlock.toFile(fp);
 	return true;
 }
 
