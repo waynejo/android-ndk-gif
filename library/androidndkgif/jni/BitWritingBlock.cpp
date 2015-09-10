@@ -5,6 +5,7 @@ using namespace std;
 BitWritingBlock::BitWritingBlock()
 {
 	currnet = new unsigned char[BLOCK_SIZE];
+	memset(currnet, 0, BLOCK_SIZE);
 	datas.push_back(currnet);
 	pos = 0;
 	remain = 8;
@@ -21,13 +22,14 @@ void BitWritingBlock::writeBits(unsigned int src, int bitNum)
 {
 	while (0 < bitNum) {
 		if (remain <= bitNum) {
-			currnet[pos] = (currnet[pos] << remain) | (((1 << remain) - 1) & src);
+			currnet[pos] = currnet[pos] | (src << (8 - remain));
 			src >>= remain;
 			bitNum -= remain;
 			remain = 8;
 			++pos;
 			if (pos == BLOCK_SIZE) {
 				currnet = new unsigned char[BLOCK_SIZE];
+				memset(currnet, 0, BLOCK_SIZE);
 				datas.push_back(currnet);
 				pos = 0;
 			}

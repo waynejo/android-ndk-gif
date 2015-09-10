@@ -251,7 +251,7 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 	unsigned char* endPixels = pixels + pixelNum;
 	unsigned char dataSize = 8;
 	int codeSize = dataSize + 1;
-	int codeMask = (1 << codeSize) - 1;
+	unsigned int codeMask = (1 << codeSize) - 1;
 	BitWritingBlock writingBlock;
 	fwrite(&dataSize, 1, 1, fp);
 
@@ -261,7 +261,8 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 	
 	int clearCode = 1 << dataSize;
 	writingBlock.writeBits(clearCode, codeSize);
-	unsigned int infoNum = clearCode + 1;
+	writingBlock.writeBits(*pixels, codeSize);
+	unsigned int infoNum = clearCode + 2;
 	unsigned short current = *pixels;
 	
 	++pixels;
@@ -273,16 +274,19 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 			writingBlock.writeBits(current, codeSize);
 			*next = infoNum;
 			++infoNum;
+			if (MAX_STACK_SIZE == infoNum) {
+				writingBlock.writeBits(clearCode, codeSize);
+				infoNum = clearCode + 2;
+				codeSize = dataSize + 1;
+				codeMask = (1 << codeSize) - 1;
+				memset(lzwInfos, 0, MAX_STACK_SIZE * BYTE_NUM * sizeof(unsigned short));
+				writingBlock.writeBits(*pixels, codeSize);
+				current = *pixels;
+				continue;
+			}
 			if (codeMask < infoNum) {
 				++codeSize;
 				codeMask = (1 << codeSize) - 1;
-			}
-			if (MAX_STACK_SIZE == infoNum) {
-				writingBlock.writeBits(clearCode, codeSize);
-				infoNum = clearCode + 1;
-				codeSize = dataSize + 1;
-				codeMask = (1 << codeSize) - 1;
-				memset(lzwInfos, 0, sizeof(MAX_STACK_SIZE * BYTE_NUM * sizeof(unsigned short)));
 			}
 			++pixels;
 			if (endPixels == pixels) {
@@ -294,6 +298,7 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 		}
 		++pixels;
 	}
+	writingBlock.writeBits(current, codeSize);
 	writingBlock.toFile(fp);
 	return true;
 }
