@@ -115,37 +115,29 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 	mapColor(cubes, 256, pixelBegin);
 }
 
-void GifEncoder::mapColor(Cube* cubes, int cubeNum, unsigned int* pixels)
+void GifEncoder::mapColor(Cube* cubes, unsigned int cubeNum, unsigned int* pixels)
 {
 	int pixelNum = width * height;
 	unsigned int* last = pixels + pixelNum;
-	Cube* lastCube = cubes + cubeNum;
+	unsigned char* pixelOut = (unsigned char*)pixels;
 	
 	while (last != pixels) {
 		Cube* cube = cubes;
-		unsigned int colors[COLOR_MAX];
-		colors[RED] = (*pixels) & 0xFF;
-		colors[GREEN] = ((*pixels) >> 8) & 0xFF;
-		colors[BLUE] = ((*pixels) >> 16) & 0xFF;
+		unsigned int r = (*pixels) & 0xFF;
+		unsigned int g = ((*pixels) >> 8) & 0xFF;
+		unsigned int b = ((*pixels) >> 16) & 0xFF;
 
-		while (lastCube != cube) {
-			bool inCube = true;
-			for (int color = 0; color < COLOR_MAX; ++color) {
-				if (cube->cMin[color] > colors[color] || cube->cMax[color] < colors[color]) {
-					inCube = false;
-					break;
-				}
-			}
-			if (inCube) {
+		for (unsigned int cubeId = 0; cubeId < cubeNum; ++cubeId) {
+			Cube* cube = cubes + cubeId;
+			if (cube->cMin[RED] <= r && r <= cube->cMax[RED] &&
+				cube->cMin[GREEN] <= g && g <= cube->cMax[GREEN] &&
+				cube->cMin[BLUE] <= b && b <= cube->cMax[BLUE]) {
+				*pixelOut = cubeId;
 				break;
 			}
-			++cube;
 		}
-		unsigned int blue = cube->color[BLUE];
-		unsigned int green = cube->color[GREEN];
-		unsigned int red = cube->color[RED];
-		(*pixels) = (blue << 16) | (green << 8) | red;
 		++pixels;
+		++pixelOut;
 	}
 }
 
@@ -261,7 +253,6 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 	
 	int clearCode = 1 << dataSize;
 	writingBlock.writeBits(clearCode, codeSize);
-	writingBlock.writeBits(*pixels, codeSize);
 	unsigned int infoNum = clearCode + 2;
 	unsigned short current = *pixels;
 	
@@ -270,25 +261,26 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 	unsigned short* next;
 	while (endPixels != pixels) {
 		next = &lzwInfos[current * BYTE_NUM + *pixels];
-		if (0 == *next) {
+		if (0 == *next || *next >= MAX_STACK_SIZE) {
 			writingBlock.writeBits(current, codeSize);
-			*next = infoNum;
-			++infoNum;
-			if (MAX_STACK_SIZE == infoNum) {
+			if (*next >= MAX_STACK_SIZE) {
 				writingBlock.writeBits(clearCode, codeSize);
 				infoNum = clearCode + 2;
 				codeSize = dataSize + 1;
 				codeMask = (1 << codeSize) - 1;
 				memset(lzwInfos, 0, MAX_STACK_SIZE * BYTE_NUM * sizeof(unsigned short));
-				writingBlock.writeBits(*pixels, codeSize);
 				current = *pixels;
+				++pixels;
 				continue;
 			}
-			if (codeMask < infoNum) {
+			*next = infoNum;
+			if (infoNum < MAX_STACK_SIZE) {
+				++infoNum;
+			}
+			if (codeMask < infoNum - 1 && infoNum < MAX_STACK_SIZE) {
 				++codeSize;
 				codeMask = (1 << codeSize) - 1;
 			}
-			++pixels;
 			if (endPixels == pixels) {
 				break;
 			}
