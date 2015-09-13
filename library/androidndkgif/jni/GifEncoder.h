@@ -10,6 +10,7 @@ enum COLOR {
 struct Cube {
 	unsigned int cMin[COLOR_MAX];
 	unsigned int cMax[COLOR_MAX];
+	unsigned int numberOfpixel[COLOR_MAX];
 	unsigned int color[COLOR_MAX];
 };
 
@@ -26,7 +27,7 @@ private:
 
 	void removeSamePixels(unsigned int* dst, unsigned int* src1, unsigned int* src2);
 	void computeColorTable(unsigned int* pixels, Cube* cubes);
-	void mapColor(Cube* cubes, int cubeNum, unsigned int* pixels);
+	void mapColor(Cube* cubes, unsigned int cubeNum, unsigned int* pixels);
 
 	void writeHeader();
 	bool writeLSD();
