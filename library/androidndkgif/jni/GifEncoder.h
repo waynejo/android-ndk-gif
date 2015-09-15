@@ -7,10 +7,15 @@ enum COLOR {
 	COLOR_MAX
 };
 
+#define GET_COLOR(color, colorIdx) (((color) >> ((colorIdx) << 3)) & 0xFF)
+
 struct Cube {
+	static const int COLOR_RANGE = 256;
+
 	unsigned int cMin[COLOR_MAX];
 	unsigned int cMax[COLOR_MAX];
-	unsigned int numberOfpixel[COLOR_MAX];
+	unsigned int colorHistogramFromIndex;
+	unsigned int colorHistogramToIndex;
 	unsigned int color[COLOR_MAX];
 };
 
@@ -26,6 +31,8 @@ private:
 	FILE* fp;
 
 	void removeSamePixels(unsigned int* dst, unsigned int* src1, unsigned int* src2);
+	void qsortColorHistogram(unsigned int* imageColorHistogram, int maxColor, unsigned int from, unsigned int to);
+	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int maxColor, unsigned int* imageColorHistogram);
 	void computeColorTable(unsigned int* pixels, Cube* cubes);
 	void mapColor(Cube* cubes, unsigned int cubeNum, unsigned int* pixels);
 

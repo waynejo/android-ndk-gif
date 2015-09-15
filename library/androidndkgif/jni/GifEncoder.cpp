@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "GifEncoder.h"
 #include "BitWritingBlock.h"
 #include <vector>
@@ -45,16 +44,72 @@ void GifEncoder::removeSamePixels(unsigned int* dst, unsigned int* src1, unsigne
 {
 }
 
+void GifEncoder::qsortColorHistogram(unsigned int* imageColorHistogram, int maxColor, unsigned int from, unsigned int to)
+{
+	if (to == from) {
+		return ;
+	}
+	unsigned int middle = from + ((to - from) >> 1);
+	unsigned int shift = maxColor << 3;
+	unsigned int pivot = ((imageColorHistogram[middle]) >> shift) & 0xFF;
+	unsigned int i = from;
+	unsigned int k = to;
+	while (i <= k) {
+		while (((imageColorHistogram[i] >> shift) & 0xFF) < pivot && i <= k) {
+			++i;
+		}
+		while (((imageColorHistogram[k] >> shift) & 0xFF) > pivot && i <= k) {
+			--k;
+		}
+		if (i <= k) {
+			unsigned int temp = imageColorHistogram[k];
+			imageColorHistogram[k] = imageColorHistogram[i];
+			imageColorHistogram[i] = temp;
+			++i;
+			--k;
+		}
+	}
+	if (from < k) {
+		qsortColorHistogram(imageColorHistogram, maxColor, from, k);
+	}
+	if (i < to) {
+		qsortColorHistogram(imageColorHistogram, maxColor, i, to);
+	}
+}
+
+void GifEncoder::updateColorHistogram(Cube* nextCube, Cube* maxCube, int maxColor, unsigned int* imageColorHistogram)
+{
+	qsortColorHistogram(imageColorHistogram, maxColor, maxCube->colorHistogramFromIndex, maxCube->colorHistogramToIndex);
+	unsigned int median = maxCube->colorHistogramFromIndex + ((maxCube->colorHistogramToIndex - maxCube->colorHistogramFromIndex) >> 1);
+	nextCube->colorHistogramFromIndex = maxCube->colorHistogramFromIndex;
+	nextCube->colorHistogramToIndex = median;
+	maxCube->colorHistogramFromIndex = median + 1;
+	nextCube->cMin[maxColor] = GET_COLOR(imageColorHistogram[nextCube->colorHistogramFromIndex], maxColor);
+	nextCube->cMax[maxColor] = GET_COLOR(imageColorHistogram[nextCube->colorHistogramToIndex], maxColor);
+	maxCube->cMin[maxColor] = GET_COLOR(imageColorHistogram[maxCube->colorHistogramFromIndex], maxColor);
+	maxCube->cMax[maxColor] = GET_COLOR(imageColorHistogram[maxCube->colorHistogramToIndex], maxColor);
+}
+
 void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 {
-	int colors[COLOR_MAX][256] = {0, };
+	int colors[COLOR_MAX][Cube::COLOR_RANGE] = {0, };
+	
 	int pixelNum = width * height;
 	unsigned int* last = pixels + pixelNum;
 	unsigned int* pixelBegin = pixels;
+
+	vector<unsigned int> colorHistogramMemory;
+	colorHistogramMemory.resize(pixelNum * sizeof(unsigned int));
+	unsigned int *colorHistogram = &colorHistogramMemory[0];
+	memcpy(colorHistogram, pixels, pixelNum * sizeof(unsigned int));
+
 	while (last != pixels) {
-		++colors[RED][(*pixels) & 0xFF];
-		++colors[GREEN][((*pixels) >> 8) & 0xFF];
-		++colors[BLUE][((*pixels) >> 16) & 0xFF];
+		unsigned char r = (*pixels) & 0xFF;
+		unsigned char g = ((*pixels) >> 8) & 0xFF;
+		unsigned char b = ((*pixels) >> 16) & 0xFF;
+		++colors[RED][r];
+		++colors[GREEN][g];
+		++colors[BLUE][b];
 		++pixels;
 	}
 
@@ -63,7 +118,6 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 	for (int i = 0; i < COLOR_MAX; ++i) {
 		cube->cMin[i] = 255;
 		cube->cMax[i] = 0;
-		cube->numberOfpixel[i] = pixelNum;
 	}
 	for (unsigned int i = 0; i < 256; ++i) {
 		for (int color = 0; color < COLOR_MAX; ++color) {
@@ -73,6 +127,8 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 			}
 		}
 	}
+	cube->colorHistogramFromIndex = 0;
+	cube->colorHistogramToIndex = pixelNum - 1;
 	for (cubeIndex = 1; cubeIndex < 255; ++cubeIndex) {
 		unsigned int maxDiff = 0;
 		int maxColor = GREEN;
@@ -101,27 +157,12 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 		Cube* nextCube = &cubes[cubeIndex + 1];
 		for (int color = 0; color < COLOR_MAX; ++color) {
 			if (color == maxColor) {
-				unsigned int halfNumber = maxCube->numberOfpixel[maxColor] / 2;
-				unsigned int sumOfColor = 0;
-				unsigned int endOfColorIndex = maxCube->cMax[color];
-				unsigned int colorIndex = maxCube->cMin[color];
-				while (sumOfColor < halfNumber) {
-					sumOfColor += colors[maxColor][colorIndex];
-					++colorIndex;
-					if (colorIndex == endOfColorIndex) {
-						break;
-					}
-				}
-				nextCube->cMax[color] = colorIndex - 1;
-				nextCube->numberOfpixel[color] = sumOfColor;
+				updateColorHistogram(nextCube, maxCube, maxColor, colorHistogram);
 			} else {
 				nextCube->cMax[color] = maxCube->cMax[color];
-				nextCube->numberOfpixel[color] = maxCube->numberOfpixel[color];
+				nextCube->cMin[color] = maxCube->cMin[color];
 			}
-			nextCube->cMin[color] = maxCube->cMin[color];
 		}
-		maxCube->cMin[maxColor] = nextCube->cMax[maxColor] + 1;
-		maxCube->numberOfpixel[maxColor] -= nextCube->numberOfpixel[maxColor];
 	}
 	for (unsigned int i = 0; i < 256; ++i) {
 		Cube* cube = &cubes[i];
@@ -129,6 +170,7 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 			cube->color[color] = cube->cMin[color] + (cube->cMax[color] - cube->cMin[color]) / 2;
 		}
 	}
+
 	mapColor(cubes, 256, pixelBegin);
 }
 
