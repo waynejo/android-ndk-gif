@@ -41,7 +41,7 @@ void GifEncoder::release()
 	}
 }
 
-void GifEncoder::removeSamePixels(uint32_t* dst, uint32_t* src1, uint32_t* src2)
+void GifEncoder::removeSamePixels(uint32_t* src1, uint32_t* src2)
 {
 }
 
@@ -84,7 +84,7 @@ void GifEncoder::updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t max
 	uint32_t median = maxCube->colorHistogramFromIndex + ((maxCube->colorHistogramToIndex - maxCube->colorHistogramFromIndex) >> 1);
 	nextCube->colorHistogramFromIndex = maxCube->colorHistogramFromIndex;
 	nextCube->colorHistogramToIndex = median;
-	maxCube->colorHistogramFromIndex = median + 1;
+	maxCube->colorHistogramFromIndex = maxCube->colorHistogramToIndex > median + 1 ? median + 1 : maxCube->colorHistogramToIndex;
 	nextCube->cMin[maxColor] = GET_COLOR(imageColorHistogram[nextCube->colorHistogramFromIndex], maxColor);
 	nextCube->cMax[maxColor] = GET_COLOR(imageColorHistogram[nextCube->colorHistogramToIndex], maxColor);
 	maxCube->cMin[maxColor] = GET_COLOR(imageColorHistogram[maxCube->colorHistogramFromIndex], maxColor);
@@ -187,17 +187,16 @@ void GifEncoder::mapColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 		uint32_t g = ((*pixels) >> 8) & 0xFF;
 		uint32_t b = ((*pixels) >> 16) & 0xFF;
 
-		bool isFound = false;
 		for (uint32_t cubeId = 0; cubeId < cubeNum; ++cubeId) {
 			Cube* cube = cubes + cubeId;
 			if (cube->cMin[RED] <= r && r <= cube->cMax[RED] &&
 				cube->cMin[GREEN] <= g && g <= cube->cMax[GREEN] &&
 				cube->cMin[BLUE] <= b && b <= cube->cMax[BLUE]) {
 				*pixelOut = cubeId;
-				isFound = true;
 				break;
 			}
 		}
+
 		++pixels;
 		++pixelOut;
 	}
@@ -232,11 +231,11 @@ bool GifEncoder::writeLSD()
 	return true;
 }
 
-bool GifEncoder::writeContents(Cube* cubes, uint8_t* pixels)
+bool GifEncoder::writeContents(Cube* cubes, uint8_t* pixels, uint16_t delay)
 {
 	writeNetscapeExt();
 
-	writeGraphicControlExt();
+	writeGraphicControlExt(delay);
 	writeFrame(cubes, pixels);
 
 	return true;
@@ -250,7 +249,7 @@ bool GifEncoder::writeNetscapeExt()
 	return true;
 }
 
-bool GifEncoder::writeGraphicControlExt()
+bool GifEncoder::writeGraphicControlExt(uint16_t delay)
 {
 	uint8_t disposalMethod = 1; // Do not dispose
 	uint8_t userInputFlag = 0; // User input is not expected.
@@ -258,7 +257,7 @@ bool GifEncoder::writeGraphicControlExt()
 
 	uint8_t packed = (disposalMethod << 2) | (userInputFlag << 1) | transparencyFlag;
 	//                                                     size, packed, delay(2), transIndex, terminator
-	const uint8_t graphicControlExt[] = {0x21, 0xF9, 0x04, packed, 0x00, 0x0a, 0xFF, 0x00};
+	const uint8_t graphicControlExt[] = {0x21, 0xF9, 0x04, packed, delay & 0xFF, (delay >> 8), 0xFF, 0x00};
 	fwrite(graphicControlExt, sizeof(graphicControlExt), 1, fp);
 	return true;
 }
@@ -360,18 +359,13 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels)
 void GifEncoder::encodeFrame(uint32_t* pixels, int delayMs)
 {
 	uint32_t pixelNum = width * height;
-	uint32_t* frame = new uint32_t[pixelNum];
-	if (0 == frameNum) {
-		memcpy(frame, pixels, pixelNum * sizeof(uint32_t));
-	} else {
-		removeSamePixels(frame, lastPixels, pixels);
+	if (0 != frameNum) {
+		removeSamePixels(lastPixels, pixels);
 	}
 	Cube cubes[256];
 	computeColorTable(pixels, cubes);
-	writeContents(cubes, (uint8_t*)pixels);
+	writeContents(cubes, (uint8_t*)pixels, delayMs / 10);
 
 	memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
 	++frameNum;
-	
-	delete[] frame;
 }

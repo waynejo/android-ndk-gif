@@ -33,7 +33,7 @@ private:
 	uint32_t* lastPixels;
 	FILE* fp;
 
-	void removeSamePixels(uint32_t* dst, uint32_t* src1, uint32_t* src2);
+	void removeSamePixels(uint32_t* src1, uint32_t* src2);
 	void qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to);
 	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram);
 	void computeColorTable(uint32_t* pixels, Cube* cubes);
@@ -41,9 +41,9 @@ private:
 
 	void writeHeader();
 	bool writeLSD();
-	bool writeContents(Cube* cubes, uint8_t* pixels);
+	bool writeContents(Cube* cubes, uint8_t* pixels, uint16_t delay);
 	bool writeNetscapeExt();
-	bool writeGraphicControlExt();
+	bool writeGraphicControlExt(uint16_t delay);
 	bool writeFrame(Cube* cubes, uint8_t* pixels);
 	bool writeLCT(int32_t colorNum, Cube* cubes);
 	bool writeBitmapData(uint8_t* pixels);
