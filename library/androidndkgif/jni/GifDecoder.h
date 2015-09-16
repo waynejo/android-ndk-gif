@@ -1,66 +1,67 @@
 #pragma once
 
+#include <vector>
+#include <stdint.h>
 #include "DataBlock.h"
 #include "GifFrame.h"
-#include <vector>
 
 class GifDecoder
 {
 private:
-	static const int MAX_STACK_SIZE = 4096;
+	static const int32_t MAX_STACK_SIZE = 4096;
 
 	std::vector<GifFrame> frames;
-	unsigned short width;
-	unsigned short height;
+	uint16_t width;
+	uint16_t height;
 	bool interlace;
 	bool gctFlag;
-	unsigned int gctSize;
-	unsigned char bgIndex;
-	unsigned char pixelAspect;
-	unsigned int gct[256]; // [0] ->r, [1] -> g, [2] -> b, max size to avoid bounds checks
-	unsigned char block[256];
-	unsigned short ix, iy, iw, ih;
-	unsigned int bgColor;
-	unsigned int loopCount; // iterations; 0 = repeat forever
-	unsigned int dispose; // 0=no action; 1=leave in place; 2=restore to bg; 3=restore to prev
+	uint32_t gctSize;
+	uint8_t bgIndex;
+	uint8_t pixelAspect;
+	uint32_t gct[256]; // [0] ->r, [1] -> g, [2] -> b, max size to avoid bounds checks
+	uint8_t block[256];
+	uint16_t ix, iy, iw, ih;
+	uint32_t bgColor;
+	uint32_t loopCount; // iterations; 0 = repeat forever
+	uint32_t dispose; // 0=no action; 1=leave in place; 2=restore to bg; 3=restore to prev
 	bool transparency; // use transparent color
-	unsigned short delay;
-	unsigned char transIndex;
-	int frameCount;
-	unsigned char* pixels;
+	uint16_t delay;
+	uint8_t transIndex;
+	int32_t frameCount;
+	uint8_t* pixels;
 
-	unsigned int lastDispose;
-	unsigned short lrx, lry, lrw, lrh;
-	unsigned int lastBgColor;
-	unsigned int* image;
-	const unsigned int* lastBitmap;
+	uint32_t lastDispose;
+	uint16_t lrx, lry, lrw, lrh;
+	uint32_t lastBgColor;
+	uint32_t* image;
+	const uint32_t* lastBitmap;
 
 	void init();
 
 	bool readLSD(DataBlock* dataBlock);
-	bool readColorTable(DataBlock* dataBlock, unsigned int* colorTable, int ncolors);
+	bool readColorTable(DataBlock* dataBlock, uint32_t* colorTable, int32_t ncolors);
 	bool readHeader(DataBlock* dataBlock);
 
 	bool readContents(DataBlock* dataBlock);
 	bool skip(DataBlock* dataBlock);
-	bool readBlock(DataBlock* dataBlock, unsigned char* blockSize);
+	bool readBlock(DataBlock* dataBlock, uint8_t* blockSize);
 	bool readNetscapeExt(DataBlock* dataBlock);
 	bool readGraphicControlExt(DataBlock* dataBlock);
 	bool readBitmap(DataBlock* dataBlock);
 	void resetFrame();
 	bool decodeBitmapData(DataBlock* dataBlock);
-	void setPixels(unsigned int* act);
+	void setPixels(uint32_t* act);
 
 public:
 	GifDecoder(void);
 	~GifDecoder(void);
 
 	bool load(const char* fileName);
-	unsigned int getFrameCount();
-	const unsigned int* getFrame(int n);
-	unsigned int getDelay(int n);
+	uint32_t getFrameCount();
+	const uint32_t* getFrame(int32_t n);
+	uint32_t getDelay(int32_t n);
 
-	unsigned int getWidth();
-	unsigned int getHeight();
+	uint32_t getWidth();
+	uint32_t getHeight();
 };
 

@@ -1,15 +1,17 @@
 #pragma once
 
+#include <stdint.h>
+
 class DataBlock
 {
 private:
-	unsigned char* data;
-	int remain;
+	uint8_t* data;
+	int32_t remain;
 public:
-	DataBlock(unsigned char* data, int remain);
+	DataBlock(uint8_t* data, int32_t remain);
 	~DataBlock(void);
 
-	bool read(unsigned char* dst, int size);
-	bool read(unsigned short* dst);
+	bool read(uint8_t* dst, int32_t size);
+	bool read(uint16_t* dst);
 };
 

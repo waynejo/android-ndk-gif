@@ -1,6 +1,7 @@
 #include "GifEncoder.h"
 #include "BitWritingBlock.h"
 #include <vector>
+#include <stdio.h>
 
 using namespace std;
 
@@ -15,7 +16,7 @@ GifEncoder::GifEncoder()
 	fp = NULL;
 }
 
-void GifEncoder::init(unsigned short width, unsigned short height, const char* fileName)
+void GifEncoder::init(uint16_t width, uint16_t height, const char* fileName)
 {
 	this->width = width;
 	this->height = height;
@@ -23,7 +24,7 @@ void GifEncoder::init(unsigned short width, unsigned short height, const char* f
 	if (NULL != lastPixels) {
 		delete[] lastPixels;
 	}
-	lastPixels = new unsigned int[width * height];
+	lastPixels = new uint32_t[width * height];
 
 	fp = fopen(fileName, "wb");
 	writeHeader();
@@ -40,20 +41,20 @@ void GifEncoder::release()
 	}
 }
 
-void GifEncoder::removeSamePixels(unsigned int* dst, unsigned int* src1, unsigned int* src2)
+void GifEncoder::removeSamePixels(uint32_t* dst, uint32_t* src1, uint32_t* src2)
 {
 }
 
-void GifEncoder::qsortColorHistogram(unsigned int* imageColorHistogram, int maxColor, unsigned int from, unsigned int to)
+void GifEncoder::qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to)
 {
 	if (to == from) {
 		return ;
 	}
-	unsigned int middle = from + ((to - from) >> 1);
-	unsigned int shift = maxColor << 3;
-	unsigned int pivot = ((imageColorHistogram[middle]) >> shift) & 0xFF;
-	unsigned int i = from;
-	unsigned int k = to;
+	uint32_t middle = from + ((to - from) >> 1);
+	uint32_t shift = maxColor << 3;
+	uint32_t pivot = ((imageColorHistogram[middle]) >> shift) & 0xFF;
+	uint32_t i = from;
+	uint32_t k = to;
 	while (i <= k) {
 		while (((imageColorHistogram[i] >> shift) & 0xFF) < pivot && i <= k) {
 			++i;
@@ -62,7 +63,7 @@ void GifEncoder::qsortColorHistogram(unsigned int* imageColorHistogram, int maxC
 			--k;
 		}
 		if (i <= k) {
-			unsigned int temp = imageColorHistogram[k];
+			uint32_t temp = imageColorHistogram[k];
 			imageColorHistogram[k] = imageColorHistogram[i];
 			imageColorHistogram[i] = temp;
 			++i;
@@ -77,10 +78,10 @@ void GifEncoder::qsortColorHistogram(unsigned int* imageColorHistogram, int maxC
 	}
 }
 
-void GifEncoder::updateColorHistogram(Cube* nextCube, Cube* maxCube, int maxColor, unsigned int* imageColorHistogram)
+void GifEncoder::updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram)
 {
 	qsortColorHistogram(imageColorHistogram, maxColor, maxCube->colorHistogramFromIndex, maxCube->colorHistogramToIndex);
-	unsigned int median = maxCube->colorHistogramFromIndex + ((maxCube->colorHistogramToIndex - maxCube->colorHistogramFromIndex) >> 1);
+	uint32_t median = maxCube->colorHistogramFromIndex + ((maxCube->colorHistogramToIndex - maxCube->colorHistogramFromIndex) >> 1);
 	nextCube->colorHistogramFromIndex = maxCube->colorHistogramFromIndex;
 	nextCube->colorHistogramToIndex = median;
 	maxCube->colorHistogramFromIndex = median + 1;
@@ -90,37 +91,37 @@ void GifEncoder::updateColorHistogram(Cube* nextCube, Cube* maxCube, int maxColo
 	maxCube->cMax[maxColor] = GET_COLOR(imageColorHistogram[maxCube->colorHistogramToIndex], maxColor);
 }
 
-void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
+void GifEncoder::computeColorTable(uint32_t* pixels, Cube* cubes)
 {
-	int colors[COLOR_MAX][Cube::COLOR_RANGE] = {0, };
+	uint32_t colors[COLOR_MAX][Cube::COLOR_RANGE] = {0, };
 	
-	int pixelNum = width * height;
-	unsigned int* last = pixels + pixelNum;
-	unsigned int* pixelBegin = pixels;
+	uint32_t pixelNum = width * height;
+	uint32_t* last = pixels + pixelNum;
+	uint32_t* pixelBegin = pixels;
 
-	vector<unsigned int> colorHistogramMemory;
-	colorHistogramMemory.resize(pixelNum * sizeof(unsigned int));
-	unsigned int *colorHistogram = &colorHistogramMemory[0];
-	memcpy(colorHistogram, pixels, pixelNum * sizeof(unsigned int));
+	vector<uint32_t> colorHistogramMemory;
+	colorHistogramMemory.resize(pixelNum * sizeof(uint32_t));
+	uint32_t *colorHistogram = &colorHistogramMemory[0];
+	memcpy(colorHistogram, pixels, pixelNum * sizeof(uint32_t));
 
 	while (last != pixels) {
-		unsigned char r = (*pixels) & 0xFF;
-		unsigned char g = ((*pixels) >> 8) & 0xFF;
-		unsigned char b = ((*pixels) >> 16) & 0xFF;
+		uint8_t r = (*pixels) & 0xFF;
+		uint8_t g = ((*pixels) >> 8) & 0xFF;
+		uint8_t b = ((*pixels) >> 16) & 0xFF;
 		++colors[RED][r];
 		++colors[GREEN][g];
 		++colors[BLUE][b];
 		++pixels;
 	}
 
-	int cubeIndex = 0;
+	uint32_t cubeIndex = 0;
 	Cube* cube = &cubes[cubeIndex];
-	for (int i = 0; i < COLOR_MAX; ++i) {
+	for (uint32_t i = 0; i < COLOR_MAX; ++i) {
 		cube->cMin[i] = 255;
 		cube->cMax[i] = 0;
 	}
-	for (unsigned int i = 0; i < 256; ++i) {
-		for (int color = 0; color < COLOR_MAX; ++color) {
+	for (uint32_t i = 0; i < 256; ++i) {
+		for (uint32_t color = 0; color < COLOR_MAX; ++color) {
 			if (0 != colors[color][i]) {
 				cube->cMax[color] = cube->cMax[color] < i ? i : cube->cMax[color];
 				cube->cMin[color] = cube->cMin[color] > i ? i : cube->cMin[color];
@@ -130,13 +131,13 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 	cube->colorHistogramFromIndex = 0;
 	cube->colorHistogramToIndex = pixelNum - 1;
 	for (cubeIndex = 1; cubeIndex < 255; ++cubeIndex) {
-		unsigned int maxDiff = 0;
-		int maxColor = GREEN;
+		uint32_t maxDiff = 0;
+		uint32_t maxColor = GREEN;
 		Cube* maxCube = cubes;
-		for (int i = 0; i < cubeIndex; ++i) {
+		for (uint32_t i = 0; i < cubeIndex; ++i) {
 			Cube* cube = &cubes[i];
-			int color = GREEN;
-			unsigned int diff = cube->cMax[GREEN] - cube->cMin[GREEN];
+			uint32_t color = GREEN;
+			uint32_t diff = cube->cMax[GREEN] - cube->cMin[GREEN];
 			if (cube->cMax[RED] - cube->cMin[RED] > diff) {
 				diff = cube->cMax[RED] - cube->cMin[RED];
 				color = RED;
@@ -155,7 +156,7 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 			break;
 		}
 		Cube* nextCube = &cubes[cubeIndex + 1];
-		for (int color = 0; color < COLOR_MAX; ++color) {
+		for (int32_t color = 0; color < COLOR_MAX; ++color) {
 			if (color == maxColor) {
 				updateColorHistogram(nextCube, maxCube, maxColor, colorHistogram);
 			} else {
@@ -164,9 +165,9 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 			}
 		}
 	}
-	for (unsigned int i = 0; i < 256; ++i) {
+	for (uint32_t i = 0; i < 256; ++i) {
 		Cube* cube = &cubes[i];
-		for (int color = 0; color < COLOR_MAX; ++color) {
+		for (int32_t color = 0; color < COLOR_MAX; ++color) {
 			cube->color[color] = cube->cMin[color] + (cube->cMax[color] - cube->cMin[color]) / 2;
 		}
 	}
@@ -174,24 +175,26 @@ void GifEncoder::computeColorTable(unsigned int* pixels, Cube* cubes)
 	mapColor(cubes, 256, pixelBegin);
 }
 
-void GifEncoder::mapColor(Cube* cubes, unsigned int cubeNum, unsigned int* pixels)
+void GifEncoder::mapColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 {
-	int pixelNum = width * height;
-	unsigned int* last = pixels + pixelNum;
-	unsigned char* pixelOut = (unsigned char*)pixels;
+	uint32_t pixelNum = width * height;
+	uint32_t* last = pixels + pixelNum;
+	uint8_t* pixelOut = (uint8_t*)pixels;
 	
 	while (last != pixels) {
 		Cube* cube = cubes;
-		unsigned int r = (*pixels) & 0xFF;
-		unsigned int g = ((*pixels) >> 8) & 0xFF;
-		unsigned int b = ((*pixels) >> 16) & 0xFF;
+		uint32_t r = (*pixels) & 0xFF;
+		uint32_t g = ((*pixels) >> 8) & 0xFF;
+		uint32_t b = ((*pixels) >> 16) & 0xFF;
 
-		for (unsigned int cubeId = 0; cubeId < cubeNum; ++cubeId) {
+		bool isFound = false;
+		for (uint32_t cubeId = 0; cubeId < cubeNum; ++cubeId) {
 			Cube* cube = cubes + cubeId;
 			if (cube->cMin[RED] <= r && r <= cube->cMax[RED] &&
 				cube->cMin[GREEN] <= g && g <= cube->cMax[GREEN] &&
 				cube->cMin[BLUE] <= b && b <= cube->cMax[BLUE]) {
 				*pixelOut = cubeId;
+				isFound = true;
 				break;
 			}
 		}
@@ -213,23 +216,23 @@ bool GifEncoder::writeLSD()
 	fwrite(&height, 2, 1, fp);
 
 	// packed fields
-	unsigned char gctFlag = 0; // 1 : global color table flag
-	unsigned char colorResolution = 8; // only 8 bit
-	unsigned char oderedFlag = 0;
-	unsigned char gctSize = 0;
-	unsigned char packed = (gctFlag << 7) | ((colorResolution - 1) << 4) | (oderedFlag << 3) | gctSize;
+	uint8_t gctFlag = 0; // 1 : global color table flag
+	uint8_t colorResolution = 8; // only 8 bit
+	uint8_t oderedFlag = 0;
+	uint8_t gctSize = 0;
+	uint8_t packed = (gctFlag << 7) | ((colorResolution - 1) << 4) | (oderedFlag << 3) | gctSize;
 	fwrite(&packed, 1, 1, fp);
 
-	unsigned char backgroundColorIndex = 0;
+	uint8_t backgroundColorIndex = 0;
 	fwrite(&backgroundColorIndex, 1, 1, fp);
 
-	unsigned char aspectRatio = 0;
+	uint8_t aspectRatio = 0;
 	fwrite(&aspectRatio, 1, 1, fp);
 
 	return true;
 }
 
-bool GifEncoder::writeContents(Cube* cubes, unsigned char* pixels)
+bool GifEncoder::writeContents(Cube* cubes, uint8_t* pixels)
 {
 	writeNetscapeExt();
 
@@ -242,37 +245,37 @@ bool GifEncoder::writeContents(Cube* cubes, unsigned char* pixels)
 bool GifEncoder::writeNetscapeExt()
 {
 	//                                   code extCode,                                                            size,       loop count, end
-	const unsigned char netscapeExt[] = {0x21, 0xFF, 0x0B, 'N', 'E', 'T', 'S', 'C', 'A', 'P', 'E', '2', '.', '0', 0x03, 0x01, 0x00, 0x00, 0x00};
+	const uint8_t netscapeExt[] = {0x21, 0xFF, 0x0B, 'N', 'E', 'T', 'S', 'C', 'A', 'P', 'E', '2', '.', '0', 0x03, 0x01, 0x00, 0x00, 0x00};
 	fwrite(netscapeExt, sizeof(netscapeExt), 1, fp);
 	return true;
 }
 
 bool GifEncoder::writeGraphicControlExt()
 {
-	unsigned char disposalMethod = 1; // Do not dispose
-	unsigned char userInputFlag = 0; // User input is not expected.
-	unsigned char transparencyFlag = 1; // Transparent Index is given.
+	uint8_t disposalMethod = 1; // Do not dispose
+	uint8_t userInputFlag = 0; // User input is not expected.
+	uint8_t transparencyFlag = 1; // Transparent Index is given.
 
-	unsigned char packed = (disposalMethod << 2) | (userInputFlag << 1) | transparencyFlag;
+	uint8_t packed = (disposalMethod << 2) | (userInputFlag << 1) | transparencyFlag;
 	//                                                     size, packed, delay(2), transIndex, terminator
-	const unsigned char graphicControlExt[] = {0x21, 0xF9, 0x04, packed, 0x00, 0x0a, 0xFF, 0x00};
+	const uint8_t graphicControlExt[] = {0x21, 0xF9, 0x04, packed, 0x00, 0x0a, 0xFF, 0x00};
 	fwrite(graphicControlExt, sizeof(graphicControlExt), 1, fp);
 	return true;
 }
 
-bool GifEncoder::writeFrame(Cube* cubes, unsigned char* pixels)
+bool GifEncoder::writeFrame(Cube* cubes, uint8_t* pixels)
 {
-	unsigned char code = 0x2C;
+	uint8_t code = 0x2C;
 	fwrite(&code, 1, 1, fp);
-	unsigned short ix = 0;
-	unsigned short iy = 0;
-	unsigned short iw = width;
-	unsigned short ih = height;
-	unsigned char localColorTableFlag = 1;
-	unsigned char interlaceFlag = 0;
-	unsigned char sortFlag = 0;
-	unsigned char sizeOfLocalColorTable = 7;
-	unsigned char packed = (localColorTableFlag << 7) | (interlaceFlag << 6) | (sortFlag << 5) | sizeOfLocalColorTable;
+	uint16_t ix = 0;
+	uint16_t iy = 0;
+	uint16_t iw = width;
+	uint16_t ih = height;
+	uint8_t localColorTableFlag = 1;
+	uint8_t interlaceFlag = 0;
+	uint8_t sortFlag = 0;
+	uint8_t sizeOfLocalColorTable = 7;
+	uint8_t packed = (localColorTableFlag << 7) | (interlaceFlag << 6) | (sortFlag << 5) | sizeOfLocalColorTable;
 	fwrite(&ix, 2, 1, fp);
 	fwrite(&iy, 2, 1, fp);
 	fwrite(&iw, 2, 1, fp);
@@ -284,11 +287,11 @@ bool GifEncoder::writeFrame(Cube* cubes, unsigned char* pixels)
 	return true;
 }
 
-bool GifEncoder::writeLCT(int colorNum, Cube* cubes)
+bool GifEncoder::writeLCT(int32_t colorNum, Cube* cubes)
 {
-	unsigned int color;
+	uint32_t color;
 	Cube* cube;
-	for (int i = 0; i < colorNum; ++i) {
+	for (int32_t i = 0; i < colorNum; ++i) {
 		cube = cubes + i;
 		color = cube->color[RED] | (cube->color[GREEN] << 8) | (cube->color[BLUE] << 16);
 		fwrite(&color, 3, 1, fp);
@@ -296,28 +299,28 @@ bool GifEncoder::writeLCT(int colorNum, Cube* cubes)
 	return true;
 }
 
-bool GifEncoder::writeBitmapData(unsigned char* pixels)
+bool GifEncoder::writeBitmapData(uint8_t* pixels)
 {
-	int pixelNum = width * height;
-	unsigned char* endPixels = pixels + pixelNum;
-	unsigned char dataSize = 8;
-	int codeSize = dataSize + 1;
-	unsigned int codeMask = (1 << codeSize) - 1;
+	uint32_t pixelNum = width * height;
+	uint8_t* endPixels = pixels + pixelNum;
+	uint8_t dataSize = 8;
+	uint32_t codeSize = dataSize + 1;
+	uint32_t codeMask = (1 << codeSize) - 1;
 	BitWritingBlock writingBlock;
 	fwrite(&dataSize, 1, 1, fp);
 
-	vector<unsigned short> lzwInfoHolder;
+	vector<uint16_t> lzwInfoHolder;
 	lzwInfoHolder.resize(MAX_STACK_SIZE * BYTE_NUM);
-	unsigned short* lzwInfos = &lzwInfoHolder[0];
+	uint16_t* lzwInfos = &lzwInfoHolder[0];
 	
-	int clearCode = 1 << dataSize;
+	uint32_t clearCode = 1 << dataSize;
 	writingBlock.writeBits(clearCode, codeSize);
-	unsigned int infoNum = clearCode + 2;
-	unsigned short current = *pixels;
+	uint32_t infoNum = clearCode + 2;
+	uint16_t current = *pixels;
 	
 	++pixels;
 	
-	unsigned short* next;
+	uint16_t* next;
 	while (endPixels != pixels) {
 		next = &lzwInfos[current * BYTE_NUM + *pixels];
 		if (0 == *next || *next >= MAX_STACK_SIZE) {
@@ -327,7 +330,7 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 				infoNum = clearCode + 2;
 				codeSize = dataSize + 1;
 				codeMask = (1 << codeSize) - 1;
-				memset(lzwInfos, 0, MAX_STACK_SIZE * BYTE_NUM * sizeof(unsigned short));
+				memset(lzwInfos, 0, MAX_STACK_SIZE * BYTE_NUM * sizeof(uint16_t));
 				current = *pixels;
 				++pixels;
 				continue;
@@ -354,20 +357,20 @@ bool GifEncoder::writeBitmapData(unsigned char* pixels)
 	return true;
 }
 
-void GifEncoder::encodeFrame(unsigned int* pixels, int delayMs)
+void GifEncoder::encodeFrame(uint32_t* pixels, int delayMs)
 {
-	int pixelNum = width * height;
-	unsigned int* frame = new unsigned int[pixelNum];
+	uint32_t pixelNum = width * height;
+	uint32_t* frame = new uint32_t[pixelNum];
 	if (0 == frameNum) {
-		memcpy(frame, pixels, pixelNum * sizeof(unsigned int));
+		memcpy(frame, pixels, pixelNum * sizeof(uint32_t));
 	} else {
 		removeSamePixels(frame, lastPixels, pixels);
 	}
 	Cube cubes[256];
 	computeColorTable(pixels, cubes);
-	writeContents(cubes, (unsigned char*)pixels);
+	writeContents(cubes, (uint8_t*)pixels);
 
-	memcpy(lastPixels, pixels, pixelNum * sizeof(unsigned int));
+	memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
 	++frameNum;
 	
 	delete[] frame;

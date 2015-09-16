@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdio.h>
+#include <stdint.h>
+
 enum COLOR {
 	RED = 0,
 	GREEN,
@@ -12,43 +15,43 @@ enum COLOR {
 struct Cube {
 	static const int COLOR_RANGE = 256;
 
-	unsigned int cMin[COLOR_MAX];
-	unsigned int cMax[COLOR_MAX];
-	unsigned int colorHistogramFromIndex;
-	unsigned int colorHistogramToIndex;
-	unsigned int color[COLOR_MAX];
+	uint32_t cMin[COLOR_MAX];
+	uint32_t cMax[COLOR_MAX];
+	uint32_t colorHistogramFromIndex;
+	uint32_t colorHistogramToIndex;
+	uint32_t color[COLOR_MAX];
 };
 
 class GifEncoder {
 private:
-	static const int MAX_STACK_SIZE = 4096;
-	static const int BYTE_NUM = 256;
+	static const int32_t MAX_STACK_SIZE = 4096;
+	static const int32_t BYTE_NUM = 256;
 
-	unsigned short width;
-	unsigned short height;
-	int frameNum;
-	unsigned int* lastPixels;
+	uint16_t width;
+	uint16_t height;
+	int32_t frameNum;
+	uint32_t* lastPixels;
 	FILE* fp;
 
-	void removeSamePixels(unsigned int* dst, unsigned int* src1, unsigned int* src2);
-	void qsortColorHistogram(unsigned int* imageColorHistogram, int maxColor, unsigned int from, unsigned int to);
-	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int maxColor, unsigned int* imageColorHistogram);
-	void computeColorTable(unsigned int* pixels, Cube* cubes);
-	void mapColor(Cube* cubes, unsigned int cubeNum, unsigned int* pixels);
+	void removeSamePixels(uint32_t* dst, uint32_t* src1, uint32_t* src2);
+	void qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to);
+	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram);
+	void computeColorTable(uint32_t* pixels, Cube* cubes);
+	void mapColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels);
 
 	void writeHeader();
 	bool writeLSD();
-	bool writeContents(Cube* cubes, unsigned char* pixels);
+	bool writeContents(Cube* cubes, uint8_t* pixels);
 	bool writeNetscapeExt();
 	bool writeGraphicControlExt();
-	bool writeFrame(Cube* cubes, unsigned char* pixels);
-	bool writeLCT(int colorNum, Cube* cubes);
-	bool writeBitmapData(unsigned char* pixels);
+	bool writeFrame(Cube* cubes, uint8_t* pixels);
+	bool writeLCT(int32_t colorNum, Cube* cubes);
+	bool writeBitmapData(uint8_t* pixels);
 public:
 	GifEncoder();
 
-	void init(unsigned short width, unsigned short height, const char* fileName);
+	void init(uint16_t width, uint16_t height, const char* fileName);
 	void release();
 
-	void encodeFrame(unsigned int* pixels, int delayMs);
+	void encodeFrame(uint32_t* pixels, int32_t delayMs);
 };

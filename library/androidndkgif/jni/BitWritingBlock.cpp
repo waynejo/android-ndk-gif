@@ -4,7 +4,7 @@ using namespace std;
 
 BitWritingBlock::BitWritingBlock()
 {
-	currnet = new unsigned char[BLOCK_SIZE];
+	currnet = new uint8_t[BLOCK_SIZE];
 	memset(currnet, 0, BLOCK_SIZE);
 	datas.push_back(currnet);
 	pos = 0;
@@ -13,12 +13,12 @@ BitWritingBlock::BitWritingBlock()
 
 BitWritingBlock::~BitWritingBlock()
 {
-	for (list<unsigned char*>::iterator i = datas.begin(); i != datas.end(); ++i) {
+	for (list<uint8_t*>::iterator i = datas.begin(); i != datas.end(); ++i) {
 		delete[] (*i);
 	}
 }
 
-void BitWritingBlock::writeBits(unsigned int src, int bitNum)
+void BitWritingBlock::writeBits(uint32_t src, int32_t bitNum)
 {
 	while (0 < bitNum) {
 		if (remain <= bitNum) {
@@ -28,7 +28,7 @@ void BitWritingBlock::writeBits(unsigned int src, int bitNum)
 			remain = 8;
 			++pos;
 			if (pos == BLOCK_SIZE) {
-				currnet = new unsigned char[BLOCK_SIZE];
+				currnet = new uint8_t[BLOCK_SIZE];
 				memset(currnet, 0, BLOCK_SIZE);
 				datas.push_back(currnet);
 				pos = 0;
@@ -41,16 +41,16 @@ void BitWritingBlock::writeBits(unsigned int src, int bitNum)
 	}
 }
 
-void BitWritingBlock::writeByte(unsigned char b)
+void BitWritingBlock::writeByte(uint8_t b)
 {
 	writeBits(b, 8);
 }
 
 bool BitWritingBlock::toFile(FILE* dst)
 {
-	unsigned char size;
-	for (list<unsigned char*>::iterator i = datas.begin(); i != datas.end(); ++i) {
-		unsigned char* block = (*i);
+	uint8_t size;
+	for (list<uint8_t*>::iterator i = datas.begin(); i != datas.end(); ++i) {
+		uint8_t* block = (*i);
 		size = block == currnet ? (remain == 0 ? pos : pos + 1) : BLOCK_SIZE;
 		fwrite(&size, 1, 1, dst);
 		fwrite(block, size, 1, dst);
