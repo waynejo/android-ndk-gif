@@ -155,7 +155,7 @@ void GifEncoder::computeColorTable(uint32_t* pixels, Cube* cubes)
 		if (1 >= maxDiff) {
 			break;
 		}
-		Cube* nextCube = &cubes[cubeIndex + 1];
+		Cube* nextCube = &cubes[cubeIndex];
 		for (int32_t color = 0; color < COLOR_MAX; ++color) {
 			if (color == maxColor) {
 				updateColorHistogram(nextCube, maxCube, maxColor, colorHistogram);
@@ -172,37 +172,71 @@ void GifEncoder::computeColorTable(uint32_t* pixels, Cube* cubes)
 		}
 	}
 
-	mapColor(cubes, 256, pixelBegin);
+	dither(cubes, 255, pixelBegin);
 }
 
-void GifEncoder::mapColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
+void GifEncoder::dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 {
+	const int32_t ERROR_PROPAGATION_DIRECTION_NUM = 4;
+	const int32_t ERROR_PROPAGATION_DIRECTION_X[] = {1, -1, 0, 1};
+	const int32_t ERROR_PROPAGATION_DIRECTION_Y[] = {0, 1, 1, 1};
+	const int32_t ERROR_PROPAGATION_DIRECTION_WEIGHT[] = {7, 3, 5, 1};
+
 	uint32_t pixelNum = width * height;
 	uint32_t* last = pixels + pixelNum;
 	uint8_t* pixelOut = (uint8_t*)pixels;
-	
-	while (last != pixels) {
-		if (0 == *pixels) {
-			*pixelOut = 255; // transparent color
-		} else {
-			Cube* cube = cubes;
-			uint32_t r = (*pixels) & 0xFF;
-			uint32_t g = ((*pixels) >> 8) & 0xFF;
-			uint32_t b = ((*pixels) >> 16) & 0xFF;
+	for (uint32_t y = 0; y < height; ++y) {
+		for (uint32_t x = 0; x < width; ++x) {
+			if (0 == *pixels) {
+				*pixelOut = 255; // transparent color
+			} else {
+				Cube* cube = cubes;
+				uint32_t r = (*pixels) & 0xFF;
+				uint32_t g = ((*pixels) >> 8) & 0xFF;
+				uint32_t b = ((*pixels) >> 16) & 0xFF;
 
-			for (uint32_t cubeId = 0; cubeId < cubeNum; ++cubeId) {
-				Cube* cube = cubes + cubeId;
-				if (cube->cMin[RED] <= r && r <= cube->cMax[RED] &&
-					cube->cMin[GREEN] <= g && g <= cube->cMax[GREEN] &&
-					cube->cMin[BLUE] <= b && b <= cube->cMax[BLUE]) {
-						*pixelOut = cubeId;
-						break;
+				uint32_t closestColor = 0;
+				uint32_t cubeR = cube->color[RED];
+				uint32_t cubeG = cube->color[GREEN];
+				uint32_t cubeB = cube->color[BLUE];
+				uint32_t closestDifference = ABS_DIFF(cubeR, r) + ABS_DIFF(cubeG, g) + ABS_DIFF(cubeB, b);
+				for (uint32_t cubeId = 1; cubeId < cubeNum; ++cubeId) {
+					cube = cubes + cubeId;
+					cubeR = cube->color[RED];
+					cubeG = cube->color[GREEN];
+					cubeB = cube->color[BLUE];
+					uint32_t difference = ABS_DIFF(cubeR, r) + ABS_DIFF(cubeG, g) + ABS_DIFF(cubeB, b);
+
+					if (difference < closestDifference) {
+						closestDifference = difference;
+						closestColor = cubeId;
+					}
+				}
+
+				*pixelOut = closestColor;
+				cube = cubes + closestColor;
+				int32_t diffR = r - (uint32_t)cube->color[RED];
+				int32_t diffG = g - (uint32_t)cube->color[GREEN];
+				int32_t diffB = b - (uint32_t)cube->color[BLUE];
+				for (int directionId = 0; directionId < ERROR_PROPAGATION_DIRECTION_NUM; ++directionId) {
+					uint32_t* pixel = pixels + ERROR_PROPAGATION_DIRECTION_X[directionId] + ERROR_PROPAGATION_DIRECTION_Y[directionId] * width;
+					if (x + ERROR_PROPAGATION_DIRECTION_X[directionId] >= width ||
+						y + ERROR_PROPAGATION_DIRECTION_Y[directionId] >= height || 0 == *pixel) {
+						continue;
+					}
+					int32_t weight = ERROR_PROPAGATION_DIRECTION_WEIGHT[directionId];
+					int32_t dstR = ((int32_t)((*pixel) & 0xFF) + (diffR * weight + 8) / 16);
+					int32_t dstG = (((int32_t)((*pixel) >> 8) & 0xFF) + (diffG * weight + 8) / 16);
+					int32_t dstB = (((int32_t)((*pixel) >> 16) & 0xFF) + (diffB * weight + 8) / 16);
+					int32_t newR = MIN(255, MAX(0, dstR));
+					int32_t newG = MIN(255, MAX(0, dstG));
+					int32_t newB = MIN(255, MAX(0, dstB));
+					*pixel = (newB << 16) | (newG << 8) | newR;
 				}
 			}
+			++pixels;
+			++pixelOut;
 		}
-
-		++pixels;
-		++pixelOut;
 	}
 }
 

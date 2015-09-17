@@ -11,6 +11,10 @@ enum COLOR {
 };
 
 #define GET_COLOR(color, colorIdx) (((color) >> ((colorIdx) << 3)) & 0xFF)
+#define ABS(v) (0 > (v) ? -(v) : (v))
+#define ABS_DIFF(a, b) ((a) > (b) ? (a) - (b) : (b) - (a))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 struct Cube {
 	static const int COLOR_RANGE = 256;
@@ -37,7 +41,7 @@ private:
 	void qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to);
 	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram);
 	void computeColorTable(uint32_t* pixels, Cube* cubes);
-	void mapColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels);
+	void dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels);
 
 	void writeHeader();
 	bool writeLSD();
