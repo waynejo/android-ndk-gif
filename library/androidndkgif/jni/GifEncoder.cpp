@@ -182,18 +182,22 @@ void GifEncoder::mapColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 	uint8_t* pixelOut = (uint8_t*)pixels;
 	
 	while (last != pixels) {
-		Cube* cube = cubes;
-		uint32_t r = (*pixels) & 0xFF;
-		uint32_t g = ((*pixels) >> 8) & 0xFF;
-		uint32_t b = ((*pixels) >> 16) & 0xFF;
+		if (0 == *pixels) {
+			*pixelOut = 255; // transparent color
+		} else {
+			Cube* cube = cubes;
+			uint32_t r = (*pixels) & 0xFF;
+			uint32_t g = ((*pixels) >> 8) & 0xFF;
+			uint32_t b = ((*pixels) >> 16) & 0xFF;
 
-		for (uint32_t cubeId = 0; cubeId < cubeNum; ++cubeId) {
-			Cube* cube = cubes + cubeId;
-			if (cube->cMin[RED] <= r && r <= cube->cMax[RED] &&
-				cube->cMin[GREEN] <= g && g <= cube->cMax[GREEN] &&
-				cube->cMin[BLUE] <= b && b <= cube->cMax[BLUE]) {
-				*pixelOut = cubeId;
-				break;
+			for (uint32_t cubeId = 0; cubeId < cubeNum; ++cubeId) {
+				Cube* cube = cubes + cubeId;
+				if (cube->cMin[RED] <= r && r <= cube->cMax[RED] &&
+					cube->cMin[GREEN] <= g && g <= cube->cMax[GREEN] &&
+					cube->cMin[BLUE] <= b && b <= cube->cMax[BLUE]) {
+						*pixelOut = cubeId;
+						break;
+				}
 			}
 		}
 
@@ -251,7 +255,7 @@ bool GifEncoder::writeNetscapeExt()
 
 bool GifEncoder::writeGraphicControlExt(uint16_t delay)
 {
-	uint8_t disposalMethod = 1; // Do not dispose
+	uint8_t disposalMethod = 3; // dispose
 	uint8_t userInputFlag = 0; // User input is not expected.
 	uint8_t transparencyFlag = 1; // Transparent Index is given.
 
