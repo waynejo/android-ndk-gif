@@ -56,6 +56,8 @@ public:
 
 	void init(uint16_t width, uint16_t height, const char* fileName);
 	void release();
+	uint16_t getWidth();
+	uint16_t getHeight();
 
 	void encodeFrame(uint32_t* pixels, int32_t delayMs);
 };

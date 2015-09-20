@@ -57,7 +57,6 @@ JNIEXPORT jobject JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFra
         return 0;
     }
     uint32_t* src = (uint32_t*) bitmapPixels;
-    uint32_t* tempPixels = new unsigned int[imgWidth * imgHeight];
     int stride = imgWidth * 4;
     int pixelsCount = stride * imgHeight;
     memcpy(bitmapPixels, decoder->getFrame(idx), pixelsCount);

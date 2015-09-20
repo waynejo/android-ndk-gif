@@ -41,6 +41,16 @@ void GifEncoder::release()
 	}
 }
 
+uint16_t GifEncoder::getWidth()
+{
+	return width;
+}
+
+uint16_t GifEncoder::getHeight()
+{
+	return height;
+}
+
 void GifEncoder::removeSamePixels(uint32_t* src1, uint32_t* src2)
 {
 }
