@@ -32,11 +32,11 @@ repositories {
 }
 
 dependencies {
-    compile('com.waynejo:androidndkgif:0.1.0')
+    compile('com.waynejo:androidndkgif:0.2.0')
 }
 ```
 
-Android Java Code (Decoding)
+Decoding
 --------
 
 ```java
@@ -51,7 +51,7 @@ if (isSucceeded) {
 }
 ```
 
-Android Java Code (Encoding)
+Encoding
 --------
 
 ```java
