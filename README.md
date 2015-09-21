@@ -59,6 +59,7 @@ Encoding
 GifEncoder gifEncoder = new GifEncoder();
 gifEncoder.init(width, height, filePath);
 
+// Bitmap is MUST ARGB_8888.
 gifEncoder.encodeFrame(bitmap1, delayMs);
 gifEncoder.encodeFrame(bitmap2, delayMs);
 
