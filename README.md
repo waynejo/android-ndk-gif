@@ -6,9 +6,10 @@ GIF library built with ndk and gradle in aar format for usage with android gradl
 Feature
 ========
 
-0.1.0
+0.2.0
 --------
 
+Support Encoding.
 Support Decoding.
 
 How to use
@@ -30,7 +31,7 @@ dependencies {
 }
 ```
 
-Android Java Code
+Android Java Code (Decoding)
 --------
 
 ```java
@@ -43,6 +44,21 @@ if (isSucceeded) {
         Bitmap bitmap = gifDecoder.frame(i);
     }
 }
+```
+
+Android Java Code (Encoding)
+--------
+
+```java
+...
+
+GifEncoder gifEncoder = new GifEncoder();
+gifEncoder.init(width, height, filePath);
+
+gifEncoder.encodeFrame(bitmap1, delayMs);
+gifEncoder.encodeFrame(bitmap2, delayMs);
+
+gifEncoder.close();
 ```
 
 # Reference
