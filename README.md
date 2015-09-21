@@ -40,7 +40,6 @@ Decoding
 --------
 
 ```java
-...
 
 GifDecoder gifDecoder = new GifDecoder();
 boolean isSucceeded = gifDecoder.load(destFile);
@@ -55,7 +54,6 @@ Encoding
 --------
 
 ```java
-...
 
 GifEncoder gifEncoder = new GifEncoder();
 gifEncoder.init(width, height, filePath);
