@@ -9,8 +9,13 @@ Feature
 0.2.0
 --------
 
-Support Encoding.
-Support Decoding.
+* Support Encoding.
+* Support Decoding.
+
+TODO
+========
+* Update Documents and samples.
+* Add use global color table option.
 
 How to use
 ========
