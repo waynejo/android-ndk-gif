@@ -9,8 +9,8 @@ Feature
 0.2.0
 --------
 
-* Support Encoding.
-* Support Decoding.
+* GIF Encoding.
+* GIF Decoding.
 
 TODO
 ========
