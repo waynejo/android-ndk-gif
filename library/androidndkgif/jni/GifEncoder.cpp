@@ -16,18 +16,22 @@ GifEncoder::GifEncoder()
 	fp = NULL;
 }
 
-void GifEncoder::init(uint16_t width, uint16_t height, const char* fileName)
+bool GifEncoder::init(uint16_t width, uint16_t height, const char* fileName)
 {
 	this->width = width;
 	this->height = height;
 
+	fp = fopen(fileName, "wb");
+	if (NULL == fp) {
+		return false;
+	}
 	if (NULL != lastPixels) {
 		delete[] lastPixels;
 	}
 	lastPixels = new uint32_t[width * height];
 
-	fp = fopen(fileName, "wb");
 	writeHeader();
+	return true;
 }
 
 void GifEncoder::release()

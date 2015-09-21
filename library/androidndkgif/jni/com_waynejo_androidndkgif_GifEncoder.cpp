@@ -13,9 +13,14 @@ JNIEXPORT jlong JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeInit
 {
     GifEncoder* gifEncoder = new GifEncoder();
     const char* pathChars = env->GetStringUTFChars(path, 0);
-    gifEncoder->init(width, height, pathChars);
+    bool result = gifEncoder->init(width, height, pathChars);
     env->ReleaseStringUTFChars(path, pathChars);
-    return (jlong)gifEncoder;
+    if (result) {
+        return (jlong) gifEncoder;
+    } else {
+        delete gifEncoder;
+        return 0;
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeClose
@@ -26,7 +31,7 @@ JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeClose
     delete gifEncoder;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeLoad
+JNIEXPORT jboolean JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeEncodeFrame
   (JNIEnv * env, jobject, jlong handle, jobject jBmpObj, jint delayMs)
 {
     GifEncoder* gifEncoder = (GifEncoder*)handle;

@@ -2,6 +2,8 @@ package com.waynejo.androidndkgif;
 
 import android.graphics.Bitmap;
 
+import java.io.FileNotFoundException;
+
 public class GifEncoder {
 
     static {
@@ -15,11 +17,14 @@ public class GifEncoder {
 
     private long instance = 0;
 
-    public void init(int width, int height, String path) {
+    public void init(int width, int height, String path) throws FileNotFoundException {
         if (0 != instance) {
             close();
         }
         instance = nativeInit(width, height, path);
+        if (0 == instance) {
+            throw new FileNotFoundException();
+        }
     }
 
     public void close() {
@@ -27,7 +32,11 @@ public class GifEncoder {
         instance = 0;
     }
 
-    public void encodeFrame(Bitmap bitmap, int delayMs) {
+    public boolean encodeFrame(Bitmap bitmap, int delayMs) {
+        if (0 != instance) {
+            return false;
+        }
         nativeEncodeFrame(instance, bitmap, delayMs);
+        return true;
     }
 }
