@@ -16,6 +16,7 @@ TODO
 ========
 * Update Documents and samples.
 * Add use global color table option.
+* Add GIF ImageView.
 
 How to use
 ========
