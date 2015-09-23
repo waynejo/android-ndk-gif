@@ -50,14 +50,19 @@ bool GifDecoder::load(const char* fileName)
 	fread(data, fileSize, 1, fp);
 	fclose(fp);
 
-	DataBlock dataBlock(data, fileSize);
-	if (!readHeader(&dataBlock)) {
-		return false;
-	}
-	bool result = readContents(&dataBlock);
+	bool result = loadFromMemory(data, fileSize);
 	delete[] data;
 
 	return result;
+}
+
+bool GifDecoder::loadFromMemory(const uint8_t* data, uint32_t size)
+{
+	DataBlock dataBlock(data, size);
+	if (!readHeader(&dataBlock)) {
+		return false;
+	}
+	return readContents(&dataBlock);
 }
 
 bool GifDecoder::readLSD(DataBlock* dataBlock)

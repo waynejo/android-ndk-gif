@@ -1,7 +1,7 @@
 #include "DataBlock.h"
 #include <string.h>
 
-DataBlock::DataBlock(uint8_t* data, int32_t remain) : 
+DataBlock::DataBlock(const uint8_t* data, int32_t remain) : 
 	remain(remain)
 {
 	this->data = data;

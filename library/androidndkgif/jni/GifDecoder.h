@@ -57,6 +57,7 @@ public:
 	~GifDecoder(void);
 
 	bool load(const char* fileName);
+	bool loadFromMemory(const uint8_t* data, uint32_t size);
 	uint32_t getFrameCount();
 	const uint32_t* getFrame(int32_t n);
 	uint32_t getDelay(int32_t n);
