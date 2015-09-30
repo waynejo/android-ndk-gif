@@ -57,6 +57,45 @@ uint16_t GifEncoder::getHeight()
 
 void GifEncoder::removeSamePixels(uint32_t* src1, uint32_t* src2)
 {
+	int32_t bytesPerLine = width * 4;
+	int32_t beginY = 0;
+	for (; beginY < height - 1; ++beginY) {
+		if (0 != memcmp(src1 + bytesPerLine * beginY, src2 + bytesPerLine * beginY, bytesPerLine)) {
+			break;
+		}
+	}
+	int32_t endY = height - 1;
+	for (; beginY <= endY; --endY) {
+		if (0 != memcmp(src1 + bytesPerLine * endY, src2 + bytesPerLine * endY, bytesPerLine)) {
+			break;
+		}
+	}
+	++endY;
+
+	int32_t endY = width * height;
+	bool isSame = true;
+	int32_t beginX = 0;
+	for (; beginX < width - 1 && isSame; ++beginX) {
+		isSame = true;
+		for (int32_t y = 0; y < endY; y += width) {
+			if (((uint32_t*)src1)[y + beginX] != ((uint32_t*)src2)[y + beginX]) {
+				isSame = false;
+				break;
+			}
+		}
+	}
+	isSame = true;
+	int32_t endX = width - 1;
+	for (; beginX <= endX && isSame; --endX) {
+		isSame = true;
+		for (int32_t y = 0; y < endY; y += width) {
+			if (((uint32_t*)src1)[y + endX] != ((uint32_t*)src2)[y + endX]) {
+				isSame = false;
+				break;
+			}
+		}
+	}
+	++endX;
 }
 
 void GifEncoder::qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to)
