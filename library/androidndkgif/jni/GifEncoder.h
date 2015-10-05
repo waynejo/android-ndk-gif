@@ -26,6 +26,13 @@ struct Cube {
 	uint32_t color[COLOR_MAX];
 };
 
+struct EncodeRect {
+	int32_t x;
+	int32_t y;
+	int32_t width;
+	int32_t height;
+};
+
 class GifEncoder {
 private:
 	static const int32_t MAX_STACK_SIZE = 4096;
@@ -37,7 +44,7 @@ private:
 	uint32_t* lastPixels;
 	FILE* fp;
 
-	void removeSamePixels(uint32_t* src1, uint32_t* src2);
+	void removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect);
 	void qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to);
 	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram);
 	void computeColorTable(uint32_t* pixels, Cube* cubes);

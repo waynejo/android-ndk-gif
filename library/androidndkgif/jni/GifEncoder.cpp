@@ -55,7 +55,7 @@ uint16_t GifEncoder::getHeight()
 	return height;
 }
 
-void GifEncoder::removeSamePixels(uint32_t* src1, uint32_t* src2)
+void GifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect)
 {
 	int32_t bytesPerLine = width * 4;
 	int32_t beginY = 0;
@@ -72,12 +72,12 @@ void GifEncoder::removeSamePixels(uint32_t* src1, uint32_t* src2)
 	}
 	++endY;
 
-	int32_t endY = width * height;
+	int32_t lastY = width * height;
 	bool isSame = true;
 	int32_t beginX = 0;
 	for (; beginX < width - 1 && isSame; ++beginX) {
 		isSame = true;
-		for (int32_t y = 0; y < endY; y += width) {
+		for (int32_t y = 0; y < lastY; y += width) {
 			if (((uint32_t*)src1)[y + beginX] != ((uint32_t*)src2)[y + beginX]) {
 				isSame = false;
 				break;
@@ -88,7 +88,7 @@ void GifEncoder::removeSamePixels(uint32_t* src1, uint32_t* src2)
 	int32_t endX = width - 1;
 	for (; beginX <= endX && isSame; --endX) {
 		isSame = true;
-		for (int32_t y = 0; y < endY; y += width) {
+		for (int32_t y = 0; y < lastY; y += width) {
 			if (((uint32_t*)src1)[y + endX] != ((uint32_t*)src2)[y + endX]) {
 				isSame = false;
 				break;
@@ -96,6 +96,11 @@ void GifEncoder::removeSamePixels(uint32_t* src1, uint32_t* src2)
 		}
 	}
 	++endX;
+
+	rect->x = beginX;
+	rect->y = beginY;
+	rect->width = endX - beginX;
+	rect->height = endY - beginY;
 }
 
 void GifEncoder::qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to)
@@ -450,13 +455,20 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels)
 void GifEncoder::encodeFrame(uint32_t* pixels, int delayMs)
 {
 	uint32_t pixelNum = width * height;
+	EncodeRect imageRect;
+	imageRect.x = 0;
+	imageRect.y = 0;
+	imageRect.width = width;
+	imageRect.height = height;
+
 	if (0 != frameNum) {
-		removeSamePixels(lastPixels, pixels);
+		removeSamePixels((uint8_t*)lastPixels, (uint8_t*)pixels, &imageRect);
 	}
+	memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
+
 	Cube cubes[256];
 	computeColorTable(pixels, cubes);
 	writeContents(cubes, (uint8_t*)pixels, delayMs / 10);
-
-	memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
+	
 	++frameNum;
 }
