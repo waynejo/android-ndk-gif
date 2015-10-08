@@ -65,7 +65,7 @@ void GifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect
 		}
 	}
 	int32_t endY = height - 1;
-	for (; beginY <= endY; --endY) {
+	for (; beginY + 1 <= endY; --endY) {
 		if (0 != memcmp(src1 + bytesPerLine * endY, src2 + bytesPerLine * endY, bytesPerLine)) {
 			break;
 		}
@@ -84,9 +84,10 @@ void GifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect
 			}
 		}
 	}
+	--beginX;
 	isSame = true;
 	int32_t endX = width - 1;
-	for (; beginX <= endX && isSame; --endX) {
+	for (; beginX + 1 <= endX && isSame; --endX) {
 		isSame = true;
 		for (int32_t y = 0; y < lastY; y += width) {
 			if (((uint32_t*)src1)[y + endX] != ((uint32_t*)src2)[y + endX]) {
@@ -327,12 +328,12 @@ bool GifEncoder::writeLSD()
 	return true;
 }
 
-bool GifEncoder::writeContents(Cube* cubes, uint8_t* pixels, uint16_t delay)
+bool GifEncoder::writeContents(Cube* cubes, uint8_t* pixels, uint16_t delay, const EncodeRect& encodingRect)
 {
 	writeNetscapeExt();
 
 	writeGraphicControlExt(delay);
-	writeFrame(cubes, pixels);
+	writeFrame(cubes, pixels, encodingRect);
 
 	return true;
 }
@@ -347,7 +348,7 @@ bool GifEncoder::writeNetscapeExt()
 
 bool GifEncoder::writeGraphicControlExt(uint16_t delay)
 {
-	uint8_t disposalMethod = 3; // dispose
+	uint8_t disposalMethod = 0; // dispose
 	uint8_t userInputFlag = 0; // User input is not expected.
 	uint8_t transparencyFlag = 1; // Transparent Index is given.
 
@@ -358,14 +359,14 @@ bool GifEncoder::writeGraphicControlExt(uint16_t delay)
 	return true;
 }
 
-bool GifEncoder::writeFrame(Cube* cubes, uint8_t* pixels)
+bool GifEncoder::writeFrame(Cube* cubes, uint8_t* pixels, const EncodeRect& encodingRect)
 {
 	uint8_t code = 0x2C;
 	fwrite(&code, 1, 1, fp);
-	uint16_t ix = 0;
-	uint16_t iy = 0;
-	uint16_t iw = width;
-	uint16_t ih = height;
+	uint16_t ix = encodingRect.x;
+	uint16_t iy = encodingRect.y;
+	uint16_t iw = encodingRect.width;
+	uint16_t ih = encodingRect.height;
 	uint8_t localColorTableFlag = 1;
 	uint8_t interlaceFlag = 0;
 	uint8_t sortFlag = 0;
@@ -378,7 +379,7 @@ bool GifEncoder::writeFrame(Cube* cubes, uint8_t* pixels)
 	fwrite(&packed, 1, 1, fp);
 
 	writeLCT(2 << sizeOfLocalColorTable, cubes);
-	writeBitmapData(pixels);
+	writeBitmapData(pixels, encodingRect);
 	return true;
 }
 
@@ -394,10 +395,10 @@ bool GifEncoder::writeLCT(int32_t colorNum, Cube* cubes)
 	return true;
 }
 
-bool GifEncoder::writeBitmapData(uint8_t* pixels)
+bool GifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect)
 {
 	uint32_t pixelNum = width * height;
-	uint8_t* endPixels = pixels + pixelNum;
+	uint8_t* endPixels = pixels + (encodingRect.y + encodingRect.height) * width + encodingRect.x + encodingRect.width;
 	uint8_t dataSize = 8;
 	uint32_t codeSize = dataSize + 1;
 	uint32_t codeMask = (1 << codeSize) - 1;
@@ -408,15 +409,21 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels)
 	lzwInfoHolder.resize(MAX_STACK_SIZE * BYTE_NUM);
 	uint16_t* lzwInfos = &lzwInfoHolder[0];
 	
+	pixels = pixels + width * encodingRect.y + encodingRect.x;
+	uint8_t* rowStart = pixels;
 	uint32_t clearCode = 1 << dataSize;
 	writingBlock.writeBits(clearCode, codeSize);
 	uint32_t infoNum = clearCode + 2;
 	uint16_t current = *pixels;
 	
 	++pixels;
+	if (encodingRect.width <= pixels - rowStart) {
+		rowStart = rowStart + width;
+		pixels = rowStart;
+	}
 	
 	uint16_t* next;
-	while (endPixels != pixels) {
+	while (endPixels > pixels) {
 		next = &lzwInfos[current * BYTE_NUM + *pixels];
 		if (0 == *next || *next >= MAX_STACK_SIZE) {
 			writingBlock.writeBits(current, codeSize);
@@ -428,6 +435,10 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels)
 				memset(lzwInfos, 0, MAX_STACK_SIZE * BYTE_NUM * sizeof(uint16_t));
 				current = *pixels;
 				++pixels;
+				if (encodingRect.width <= pixels - rowStart) {
+					rowStart = rowStart + width;
+					pixels = rowStart;
+				}
 				continue;
 			}
 			*next = infoNum;
@@ -438,7 +449,7 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels)
 				++codeSize;
 				codeMask = (1 << codeSize) - 1;
 			}
-			if (endPixels == pixels) {
+			if (endPixels <= pixels) {
 				break;
 			}
 			current = *pixels;
@@ -446,6 +457,10 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels)
 			current = *next;
 		}
 		++pixels;
+		if (encodingRect.width <= pixels - rowStart) {
+			rowStart = rowStart + width;
+			pixels = rowStart;
+		}
 	}
 	writingBlock.writeBits(current, codeSize);
 	writingBlock.toFile(fp);
@@ -468,7 +483,7 @@ void GifEncoder::encodeFrame(uint32_t* pixels, int delayMs)
 
 	Cube cubes[256];
 	computeColorTable(pixels, cubes);
-	writeContents(cubes, (uint8_t*)pixels, delayMs / 10);
+	writeContents(cubes, (uint8_t*)pixels, delayMs / 10, imageRect);
 	
 	++frameNum;
 }

@@ -52,12 +52,12 @@ private:
 
 	void writeHeader();
 	bool writeLSD();
-	bool writeContents(Cube* cubes, uint8_t* pixels, uint16_t delay);
+	bool writeContents(Cube* cubes, uint8_t* pixels, uint16_t delay, const EncodeRect& encodingRect);
 	bool writeNetscapeExt();
 	bool writeGraphicControlExt(uint16_t delay);
-	bool writeFrame(Cube* cubes, uint8_t* pixels);
+	bool writeFrame(Cube* cubes, uint8_t* pixels, const EncodeRect& encodingRect);
 	bool writeLCT(int32_t colorNum, Cube* cubes);
-	bool writeBitmapData(uint8_t* pixels);
+	bool writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect);
 public:
 	GifEncoder();
 
