@@ -6,8 +6,8 @@ Bugfixes:
 
 Features:
 
-  - ignore same image region.
-  - improve little encoding speed.
+  - Ignore same image regions when write gif.
+  - Improve little encoding speed.
 
 ## 0.2.0 (2015-09-22)
 
