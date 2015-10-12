@@ -33,7 +33,7 @@ public class GifEncoder {
     }
 
     public boolean encodeFrame(Bitmap bitmap, int delayMs) {
-        if (0 != instance) {
+        if (0 == instance) {
             return false;
         }
         nativeEncodeFrame(instance, bitmap, delayMs);
