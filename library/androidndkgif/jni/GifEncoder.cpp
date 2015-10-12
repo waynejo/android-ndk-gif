@@ -254,29 +254,31 @@ void GifEncoder::dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 				uint32_t g = ((*pixels) >> 8) & 0xFF;
 				uint32_t b = ((*pixels) >> 16) & 0xFF;
 
-				uint32_t closestColor = 0;
-				uint32_t cubeR = cube->color[RED];
-				uint32_t cubeG = cube->color[GREEN];
-				uint32_t cubeB = cube->color[BLUE];
-				uint32_t closestDifference = ABS_DIFF(cubeR, r) + ABS_DIFF(cubeG, g) + ABS_DIFF(cubeB, b);
-				for (uint32_t cubeId = 1; cubeId < cubeNum; ++cubeId) {
-					cube = cubes + cubeId;
-					cubeR = cube->color[RED];
-					cubeG = cube->color[GREEN];
-					cubeB = cube->color[BLUE];
-					uint32_t difference = ABS_DIFF(cubeR, r) + ABS_DIFF(cubeG, g) + ABS_DIFF(cubeB, b);
+				Cube* closestColorCube = cube;
+				int32_t diffR = cube->color[RED] - r;
+				int32_t diffG = cube->color[GREEN] - g;
+				int32_t diffB = cube->color[BLUE] - b;
+				uint32_t closestDifference = diffR * diffR + diffG * diffG + diffB * diffB;
+				Cube* lastCube = cube + cubeNum;
+				
+				for (Cube* testCube = cube; testCube != lastCube; ++testCube) {
+					diffR = testCube->color[RED] - r;
+					diffG = testCube->color[GREEN] - g;
+					diffB = testCube->color[BLUE] - b;
+					uint32_t difference = diffR * diffR + diffG * diffG + diffB * diffB;
 
 					if (difference < closestDifference) {
 						closestDifference = difference;
-						closestColor = cubeId;
+						closestColorCube = testCube;
 					}
 				}
 
+				uint32_t closestColor = closestColorCube - cube;
 				*pixelOut = closestColor;
 				cube = cubes + closestColor;
-				int32_t diffR = r - (uint32_t)cube->color[RED];
-				int32_t diffG = g - (uint32_t)cube->color[GREEN];
-				int32_t diffB = b - (uint32_t)cube->color[BLUE];
+				diffR = r - (uint32_t)cube->color[RED];
+				diffG = g - (uint32_t)cube->color[GREEN];
+				diffB = b - (uint32_t)cube->color[BLUE];
 				for (int directionId = 0; directionId < ERROR_PROPAGATION_DIRECTION_NUM; ++directionId) {
 					uint32_t* pixel = pixels + ERROR_PROPAGATION_DIRECTION_X[directionId] + ERROR_PROPAGATION_DIRECTION_Y[directionId] * width;
 					if (x + ERROR_PROPAGATION_DIRECTION_X[directionId] >= width ||
