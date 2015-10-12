@@ -6,7 +6,7 @@ GIF library built with ndk and gradle in aar format for usage with android gradl
 Feature
 ========
 
-0.2.0
+0.2.1
 --------
 
 * GIF Encoding.
@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    compile('com.waynejo:androidndkgif:0.2.0')
+    compile('com.waynejo:androidndkgif:0.2.1')
 }
 ```
 
