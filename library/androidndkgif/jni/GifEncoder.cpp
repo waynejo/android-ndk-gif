@@ -246,7 +246,7 @@ void GifEncoder::dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 	uint8_t* pixelOut = (uint8_t*)pixels;
 	for (uint32_t y = 0; y < height; ++y) {
 		for (uint32_t x = 0; x < width; ++x) {
-			if (0 == *pixels) {
+			if (0 == (*pixels >> 24)) {
 				*pixelOut = 255; // transparent color
 			} else {
 				Cube* cube = cubes;
@@ -280,17 +280,18 @@ void GifEncoder::dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 				for (int directionId = 0; directionId < ERROR_PROPAGATION_DIRECTION_NUM; ++directionId) {
 					uint32_t* pixel = pixels + ERROR_PROPAGATION_DIRECTION_X[directionId] + ERROR_PROPAGATION_DIRECTION_Y[directionId] * width;
 					if (x + ERROR_PROPAGATION_DIRECTION_X[directionId] >= width ||
-						y + ERROR_PROPAGATION_DIRECTION_Y[directionId] >= height || 0 == *pixel) {
+						y + ERROR_PROPAGATION_DIRECTION_Y[directionId] >= height || 0 == (*pixels >> 24)) {
 						continue;
 					}
 					int32_t weight = ERROR_PROPAGATION_DIRECTION_WEIGHT[directionId];
 					int32_t dstR = ((int32_t)((*pixel) & 0xFF) + (diffR * weight + 8) / 16);
 					int32_t dstG = (((int32_t)((*pixel) >> 8) & 0xFF) + (diffG * weight + 8) / 16);
 					int32_t dstB = (((int32_t)((*pixel) >> 16) & 0xFF) + (diffB * weight + 8) / 16);
+					int32_t dstA = (int32_t)(*pixel >> 24);
 					int32_t newR = MIN(255, MAX(0, dstR));
 					int32_t newG = MIN(255, MAX(0, dstG));
 					int32_t newB = MIN(255, MAX(0, dstB));
-					*pixel = (newB << 16) | (newG << 8) | newR;
+					*pixel = (dstA << 24) | (newB << 16) | (newG << 8) | newR;
 				}
 			}
 			++pixels;
