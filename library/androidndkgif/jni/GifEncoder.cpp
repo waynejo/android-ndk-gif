@@ -430,23 +430,16 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect
 		next = &lzwInfos[current * BYTE_NUM + *pixels];
 		if (0 == *next || *next >= MAX_STACK_SIZE) {
 			writingBlock.writeBits(current, codeSize);
-			if (*next >= MAX_STACK_SIZE) {
+
+			*next = infoNum;
+			if (infoNum < MAX_STACK_SIZE) {
+				++infoNum;
+			} else {
 				writingBlock.writeBits(clearCode, codeSize);
 				infoNum = clearCode + 2;
 				codeSize = dataSize + 1;
 				codeMask = (1 << codeSize) - 1;
 				memset(lzwInfos, 0, MAX_STACK_SIZE * BYTE_NUM * sizeof(uint16_t));
-				current = *pixels;
-				++pixels;
-				if (encodingRect.width <= pixels - rowStart) {
-					rowStart = rowStart + width;
-					pixels = rowStart;
-				}
-				continue;
-			}
-			*next = infoNum;
-			if (infoNum < MAX_STACK_SIZE) {
-				++infoNum;
 			}
 			if (codeMask < infoNum - 1 && infoNum < MAX_STACK_SIZE) {
 				++codeSize;
