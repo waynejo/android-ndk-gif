@@ -6,7 +6,7 @@ GIF library built with ndk and gradle in aar format for usage with android gradl
 Feature
 ========
 
-0.2.1
+0.2.2
 --------
 
 * GIF Encoding.
