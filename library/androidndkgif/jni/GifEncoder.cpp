@@ -118,7 +118,7 @@ void GifEncoder::qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxC
 		while (((imageColorHistogram[i] >> shift) & 0xFF) < pivot && i <= k) {
 			++i;
 		}
-		while (((imageColorHistogram[k] >> shift) & 0xFF) > pivot && i <= k) {
+		while (((imageColorHistogram[k] >> shift) & 0xFF) > pivot && i <= k && 1 < k) {
 			--k;
 		}
 		if (i <= k) {
@@ -129,7 +129,7 @@ void GifEncoder::qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxC
 			--k;
 		}
 	}
-	if (from < k) {
+	if (from < k && -1 != k) {
 		qsortColorHistogram(imageColorHistogram, maxColor, from, k);
 	}
 	if (i < to) {
