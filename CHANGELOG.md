@@ -1,3 +1,10 @@
+## 0.2.2 (2016-05-03)
+
+Bugfixes:
+  -  Fix a bug that right most pixels didn't rendered correctly.
+  -  Fix a crash.
+  -  Fix Problem that some android devices's gallery can't display correctly.
+
 ## 0.2.1 (2015-10-12)
 
 Bugfixes:
