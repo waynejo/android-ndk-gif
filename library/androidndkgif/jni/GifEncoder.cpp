@@ -100,7 +100,7 @@ void GifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect
 
 	rect->x = beginX;
 	rect->y = beginY;
-	rect->width = endX - beginX;
+	rect->width = endX - beginX + 1;
 	rect->height = endY - beginY;
 }
 
