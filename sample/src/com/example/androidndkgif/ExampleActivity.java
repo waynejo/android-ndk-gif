@@ -23,6 +23,8 @@ import java.io.InputStream;
 
 public class ExampleActivity extends Activity {
 
+    private boolean useDither = true;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,6 +103,7 @@ public class ExampleActivity extends Activity {
 
         GifEncoder gifEncoder = new GifEncoder();
         gifEncoder.init(width, height, filePath);
+        gifEncoder.setDither(useDither);
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         Paint p = new Paint();
@@ -111,5 +114,9 @@ public class ExampleActivity extends Activity {
             gifEncoder.encodeFrame(bitmap, delayMs);
         }
         gifEncoder.close();
+    }
+
+    public void onDisableDithering(View v) {
+        useDither = false;
     }
 }

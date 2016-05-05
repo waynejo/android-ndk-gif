@@ -41,6 +41,7 @@ private:
 	uint16_t width;
 	uint16_t height;
 	int32_t frameNum;
+	bool useDither;
 	uint32_t* lastPixels;
 	FILE* fp;
 
@@ -48,7 +49,7 @@ private:
 	void qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to);
 	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram);
 	void computeColorTable(uint32_t* pixels, Cube* cubes);
-	void dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels);
+	void reduceColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels);
 
 	void writeHeader();
 	bool writeLSD();
@@ -63,6 +64,7 @@ public:
 
 	bool init(uint16_t width, uint16_t height, const char* fileName);
 	void release();
+	void setDither(bool useDither);
 	uint16_t getWidth();
 	uint16_t getHeight();
 

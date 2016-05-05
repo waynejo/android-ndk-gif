@@ -25,6 +25,14 @@ JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeClose
 
 /*
  * Class:     com_waynejo_androidndkgif_GifEncoder
+ * Method:    nativeSetDither
+ * Signature: (JZ)V
+ */
+JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeSetDither
+  (JNIEnv *, jobject, jlong, jboolean);
+
+/*
+ * Class:     com_waynejo_androidndkgif_GifEncoder
  * Method:    nativeEncodeFrame
  * Signature: (JLandroid/graphics/Bitmap;I)Z
  */

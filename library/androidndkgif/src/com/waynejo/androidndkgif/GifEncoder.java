@@ -12,6 +12,7 @@ public class GifEncoder {
 
     private native long nativeInit(int width, int height, String path);
     private native void nativeClose(long handle);
+    private native void nativeSetDither(long handle, boolean useDither);
 
     private native boolean nativeEncodeFrame(long handle, Bitmap bitmap, int delayMs);
 
@@ -30,6 +31,13 @@ public class GifEncoder {
     public void close() {
         nativeClose(instance);
         instance = 0;
+    }
+
+    public void setDither(boolean useDither) {
+        if (0 == instance) {
+            return ;
+        }
+        nativeSetDither(instance, useDither);
     }
 
     public boolean encodeFrame(Bitmap bitmap, int delayMs) {

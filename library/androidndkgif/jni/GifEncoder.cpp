@@ -11,6 +11,7 @@ GifEncoder::GifEncoder()
 	width = 1;
 	height = 1;
 
+	useDither = true;
 	frameNum = 0;
 	lastPixels = NULL;
 	fp = NULL;
@@ -43,6 +44,10 @@ void GifEncoder::release()
 	if (NULL != fp) {
 		fclose(fp);
 	}
+}
+
+void GifEncoder::setDither(bool useDither) {
+	this->useDither = useDither;
 }
 
 uint16_t GifEncoder::getWidth()
@@ -153,7 +158,7 @@ void GifEncoder::updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t max
 void GifEncoder::computeColorTable(uint32_t* pixels, Cube* cubes)
 {
 	uint32_t colors[COLOR_MAX][Cube::COLOR_RANGE] = {0, };
-	
+
 	uint32_t pixelNum = width * height;
 	uint32_t* last = pixels + pixelNum;
 	uint32_t* pixelBegin = pixels;
@@ -231,10 +236,10 @@ void GifEncoder::computeColorTable(uint32_t* pixels, Cube* cubes)
 		}
 	}
 
-	dither(cubes, 255, pixelBegin);
+	reduceColor(cubes, 255, pixelBegin);
 }
 
-void GifEncoder::dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
+void GifEncoder::reduceColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 {
 	const int32_t ERROR_PROPAGATION_DIRECTION_NUM = 4;
 	const int32_t ERROR_PROPAGATION_DIRECTION_X[] = {1, -1, 0, 1};
@@ -260,7 +265,7 @@ void GifEncoder::dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 				int32_t diffB = cube->color[BLUE] - b;
 				uint32_t closestDifference = diffR * diffR + diffG * diffG + diffB * diffB;
 				Cube* lastCube = cube + cubeNum;
-				
+
 				for (Cube* testCube = cube; testCube != lastCube; ++testCube) {
 					diffR = testCube->color[RED] - r;
 					diffG = testCube->color[GREEN] - g;
@@ -275,25 +280,27 @@ void GifEncoder::dither(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 
 				uint32_t closestColor = closestColorCube - cube;
 				*pixelOut = closestColor;
-				cube = cubes + closestColor;
-				diffR = r - (uint32_t)cube->color[RED];
-				diffG = g - (uint32_t)cube->color[GREEN];
-				diffB = b - (uint32_t)cube->color[BLUE];
-				for (int directionId = 0; directionId < ERROR_PROPAGATION_DIRECTION_NUM; ++directionId) {
-					uint32_t* pixel = pixels + ERROR_PROPAGATION_DIRECTION_X[directionId] + ERROR_PROPAGATION_DIRECTION_Y[directionId] * width;
-					if (x + ERROR_PROPAGATION_DIRECTION_X[directionId] >= width ||
-						y + ERROR_PROPAGATION_DIRECTION_Y[directionId] >= height || 0 == (*pixels >> 24)) {
-						continue;
+				if (useDither) {
+					cube = &cubes[closestColor];
+					diffR = r - (uint32_t)cube->color[RED];
+					diffG = g - (uint32_t)cube->color[GREEN];
+					diffB = b - (uint32_t)cube->color[BLUE];
+					for (int directionId = 0; directionId < ERROR_PROPAGATION_DIRECTION_NUM; ++directionId) {
+						uint32_t* pixel = pixels + ERROR_PROPAGATION_DIRECTION_X[directionId] + ERROR_PROPAGATION_DIRECTION_Y[directionId] * width;
+						if (x + ERROR_PROPAGATION_DIRECTION_X[directionId] >= width ||
+							y + ERROR_PROPAGATION_DIRECTION_Y[directionId] >= height || 0 == (*pixels >> 24)) {
+							continue;
+						}
+						int32_t weight = ERROR_PROPAGATION_DIRECTION_WEIGHT[directionId];
+						int32_t dstR = ((int32_t)((*pixel) & 0xFF) + (diffR * weight + 8) / 16);
+						int32_t dstG = (((int32_t)((*pixel) >> 8) & 0xFF) + (diffG * weight + 8) / 16);
+						int32_t dstB = (((int32_t)((*pixel) >> 16) & 0xFF) + (diffB * weight + 8) / 16);
+						int32_t dstA = (int32_t)(*pixel >> 24);
+						int32_t newR = MIN(255, MAX(0, dstR));
+						int32_t newG = MIN(255, MAX(0, dstG));
+						int32_t newB = MIN(255, MAX(0, dstB));
+						*pixel = (dstA << 24) | (newB << 16) | (newG << 8) | newR;
 					}
-					int32_t weight = ERROR_PROPAGATION_DIRECTION_WEIGHT[directionId];
-					int32_t dstR = ((int32_t)((*pixel) & 0xFF) + (diffR * weight + 8) / 16);
-					int32_t dstG = (((int32_t)((*pixel) >> 8) & 0xFF) + (diffG * weight + 8) / 16);
-					int32_t dstB = (((int32_t)((*pixel) >> 16) & 0xFF) + (diffB * weight + 8) / 16);
-					int32_t dstA = (int32_t)(*pixel >> 24);
-					int32_t newR = MIN(255, MAX(0, dstR));
-					int32_t newG = MIN(255, MAX(0, dstG));
-					int32_t newB = MIN(255, MAX(0, dstB));
-					*pixel = (dstA << 24) | (newB << 16) | (newG << 8) | newR;
 				}
 			}
 			++pixels;

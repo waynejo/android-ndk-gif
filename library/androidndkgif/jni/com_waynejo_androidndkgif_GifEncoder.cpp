@@ -31,6 +31,13 @@ JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeClose
     delete gifEncoder;
 }
 
+JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeSetDither
+  (JNIEnv *, jobject, jlong handle, jboolean useDither)
+{
+    GifEncoder* gifEncoder = (GifEncoder*)handle;
+    gifEncoder->setDither(useDither);
+}
+
 JNIEXPORT jboolean JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeEncodeFrame
   (JNIEnv * env, jobject, jlong handle, jobject jBmpObj, jint delayMs)
 {
