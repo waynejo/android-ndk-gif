@@ -43,6 +43,7 @@ private:
 	int32_t frameNum;
 	bool useDither;
 	uint32_t* lastPixels;
+	uint32_t lastRootColor;
 	FILE* fp;
 
 	void removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect);

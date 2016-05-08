@@ -15,6 +15,7 @@ GifEncoder::GifEncoder()
 	frameNum = 0;
 	lastPixels = NULL;
 	fp = NULL;
+	lastRootColor = GREEN;
 }
 
 bool GifEncoder::init(uint16_t width, uint16_t height, const char* fileName)
@@ -211,27 +212,29 @@ void GifEncoder::computeColorTable(uint32_t* pixels, Cube* cubes)
 	}
 	cube->colorHistogramFromIndex = 0;
 	cube->colorHistogramToIndex = pixelNum - 1;
+	uint32_t comparingColorList[COLOR_MAX] = {GREEN, RED, BLUE};
 	for (cubeIndex = 1; cubeIndex < 255; ++cubeIndex) {
 		uint32_t maxDiff = 0;
 		uint32_t maxColor = GREEN;
 		Cube* maxCube = cubes;
 		for (uint32_t i = 0; i < cubeIndex; ++i) {
 			Cube* cube = &cubes[i];
-			uint32_t color = GREEN;
-			uint32_t diff = cube->cMax[GREEN] - cube->cMin[GREEN];
-			if (cube->cMax[RED] - cube->cMin[RED] > diff) {
-				diff = cube->cMax[RED] - cube->cMin[RED];
-				color = RED;
+			for (uint32_t colorIdx = 0; colorIdx < COLOR_MAX; ++colorIdx) {
+				uint32_t comparingColor = comparingColorList[colorIdx];
+				uint32_t comparingDiff = cube->cMax[comparingColor] - cube->cMin[comparingColor];
+				if (comparingColor == lastRootColor) {
+					comparingDiff = comparingDiff * 11 / 10; // multiply 110% to reduce color blinking from difference of root color.
+				}
+
+				if (comparingDiff > maxDiff) {
+					maxDiff = comparingDiff;
+					maxColor = comparingColor;
+					maxCube = cube;
+				}
 			}
-			if (cube->cMax[BLUE] - cube->cMin[BLUE] > diff) {
-				diff = cube->cMax[BLUE] - cube->cMin[BLUE];
-				color = BLUE;
-			}
-			if (maxDiff < diff) {
-				maxDiff = diff;
-				maxCube = cube;
-				maxColor = color;
-			}
+		}
+		if (1 == cubeIndex) {
+			lastRootColor = maxColor;
 		}
 		if (1 >= maxDiff) {
 			break;
