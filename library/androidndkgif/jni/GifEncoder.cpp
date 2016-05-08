@@ -148,6 +148,23 @@ void GifEncoder::updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t max
 	uint32_t median = maxCube->colorHistogramFromIndex + ((maxCube->colorHistogramToIndex - maxCube->colorHistogramFromIndex) >> 1);
 	nextCube->colorHistogramFromIndex = maxCube->colorHistogramFromIndex;
 	nextCube->colorHistogramToIndex = median;
+
+	if (GET_COLOR(imageColorHistogram[nextCube->colorHistogramFromIndex], maxColor) !=
+		GET_COLOR(imageColorHistogram[maxCube->colorHistogramToIndex], maxColor)) {
+			if (GET_COLOR(imageColorHistogram[nextCube->colorHistogramFromIndex], maxColor) != GET_COLOR(imageColorHistogram[nextCube->colorHistogramToIndex], maxColor)) {
+				if (GET_COLOR(imageColorHistogram[median], maxColor) == GET_COLOR(imageColorHistogram[median + 1], maxColor)) {
+					while (GET_COLOR(imageColorHistogram[nextCube->colorHistogramToIndex], maxColor) == GET_COLOR(imageColorHistogram[median], maxColor)) {
+						--median;
+					}
+					nextCube->colorHistogramToIndex = median;
+				}
+			} else {
+				while (GET_COLOR(imageColorHistogram[nextCube->colorHistogramToIndex], maxColor) == GET_COLOR(imageColorHistogram[median], maxColor)) {
+					++median;
+				}
+				nextCube->colorHistogramToIndex = median;
+			}
+	}
 	maxCube->colorHistogramFromIndex = maxCube->colorHistogramToIndex > median + 1 ? median + 1 : maxCube->colorHistogramToIndex;
 	nextCube->cMin[maxColor] = GET_COLOR(imageColorHistogram[nextCube->colorHistogramFromIndex], maxColor);
 	nextCube->cMax[maxColor] = GET_COLOR(imageColorHistogram[nextCube->colorHistogramToIndex], maxColor);
@@ -229,10 +246,14 @@ void GifEncoder::computeColorTable(uint32_t* pixels, Cube* cubes)
 			}
 		}
 	}
-	for (uint32_t i = 0; i < 256; ++i) {
+	for (uint32_t i = 0; i < 255; ++i) {
 		Cube* cube = &cubes[i];
 		for (int32_t color = 0; color < COLOR_MAX; ++color) {
-			cube->color[color] = cube->cMin[color] + (cube->cMax[color] - cube->cMin[color]) / 2;
+			qsortColorHistogram(colorHistogram, color, cube->colorHistogramFromIndex, cube->colorHistogramToIndex);
+			uint32_t median = cube->colorHistogramFromIndex + ((cube->colorHistogramToIndex - cube->colorHistogramFromIndex) >> 1);
+			if (median < pixelNum) {
+				cube->color[color] = GET_COLOR(colorHistogram[median], color);
+			}
 		}
 	}
 
