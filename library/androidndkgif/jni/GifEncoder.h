@@ -43,6 +43,7 @@ private:
 	int32_t frameNum;
 	bool useDither;
 	uint32_t* lastPixels;
+	uint32_t* lastColorReducedPixels;
 	uint32_t lastRootColor;
 	FILE* fp;
 
