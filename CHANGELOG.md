@@ -1,3 +1,9 @@
+## 0.2.3 (2016-05-15)
+
+Features:
+  - Improve to prevent blinking color.
+
+
 ## 0.2.2 (2016-05-03)
 
 Bugfixes:
