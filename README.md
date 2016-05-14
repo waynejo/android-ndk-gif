@@ -5,7 +5,7 @@ GIF library built with ndk and gradle in aar format for usage with android gradl
 
 Last Change Log
 ========
-* Improve to prevent color blinking.
+* Improve to prevent color blinking when encoding.
 
 Feature
 ========
