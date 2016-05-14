@@ -3,12 +3,12 @@ Android NDK GIF Library
 
 GIF library built with ndk and gradle in aar format for usage with android gradle build system.
 
+Last Change Log
+========
+* Improve to prevent color blinking.
+
 Feature
 ========
-
-0.2.2
---------
-
 * GIF Encoding.
 * GIF Decoding.
 
@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    compile('com.waynejo:androidndkgif:0.2.2')
+    compile('com.waynejo:androidndkgif:0.2.3')
 }
 ```
 
