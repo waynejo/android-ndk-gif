@@ -69,3 +69,6 @@ gifEncoder.close();
 # Reference
 
 * GIF Decoder is originally based on https://code.google.com/p/android-gifview/ .
+
+---------
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-android--ndk--gif-green.svg?style=true)](https://android-arsenal.com/details/1/3585)
