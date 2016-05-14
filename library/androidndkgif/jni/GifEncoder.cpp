@@ -290,12 +290,12 @@ void GifEncoder::reduceColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 	uint32_t pixelNum = width * height;
 	uint32_t* last = pixels + pixelNum;
 	uint8_t* pixelOut = (uint8_t*)pixels;
-	uint32_t* colorReducedpixelOut = lastColorReducedPixels;
+	uint32_t* colorReducedPixelOut = lastColorReducedPixels;
 	for (uint32_t y = 0; y < height; ++y) {
 		for (uint32_t x = 0; x < width; ++x) {
 			if (0 == (*pixels >> 24)) {
 				*pixelOut = 255; // transparent color
-				*colorReducedpixelOut = 0;
+				*colorReducedPixelOut = 0;
 			} else {
 				Cube* cube = cubes;
 				uint32_t r = (*pixels) & 0xFF;
@@ -324,7 +324,7 @@ void GifEncoder::reduceColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 				uint32_t closestColor = closestColorCube - cube;
 				cube = &cubes[closestColor];
 				*pixelOut = closestColor;
-				*colorReducedpixelOut = (0xFF000000 | (cube->color[BLUE] << 16) | (cube->color[GREEN] << 8) | cube->color[RED]);
+				*colorReducedPixelOut = (0xFF000000 | (cube->color[BLUE] << 16) | (cube->color[GREEN] << 8) | cube->color[RED]);
 				if (useDither) {
 					diffR = r - (uint32_t)cube->color[RED];
 					diffG = g - (uint32_t)cube->color[GREEN];
@@ -349,7 +349,7 @@ void GifEncoder::reduceColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels)
 			}
 			++pixels;
 			++pixelOut;
-			++colorReducedpixelOut;
+			++colorReducedPixelOut;
 		}
 	}
 }
