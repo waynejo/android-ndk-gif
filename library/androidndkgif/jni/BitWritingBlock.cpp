@@ -55,7 +55,5 @@ bool BitWritingBlock::toFile(FILE* dst)
 		fwrite(&size, 1, 1, dst);
 		fwrite(block, size, 1, dst);
 	}
-	size = 0;
-	fwrite(&size, 1, 1, dst);
 	return true;
 }

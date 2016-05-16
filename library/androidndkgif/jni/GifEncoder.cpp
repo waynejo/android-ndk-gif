@@ -52,6 +52,8 @@ void GifEncoder::release()
 	}
 
 	if (NULL != fp) {
+		uint8_t gifFileTerminator = 0x3B;
+		fwrite(&gifFileTerminator, 1, 1, fp);
 		fclose(fp);
 	}
 }
@@ -470,6 +472,7 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect
 	writingBlock.writeBits(clearCode, codeSize);
 	uint32_t infoNum = clearCode + 2;
 	uint16_t current = *pixels;
+	uint8_t endOfImageData = 0;
 	
 	++pixels;
 	if (encodingRect.width <= pixels - rowStart) {
@@ -512,6 +515,8 @@ bool GifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect
 	}
 	writingBlock.writeBits(current, codeSize);
 	writingBlock.toFile(fp);
+	fwrite(&endOfImageData, 1, 1, fp);
+
 	return true;
 }
 
