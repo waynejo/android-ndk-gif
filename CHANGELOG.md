@@ -1,3 +1,8 @@
+## 0.2.4 (2016-05-21)
+
+Bugfixes:
+  -  Fix a bug that twitter can't load a GIF file what encoded using this library.
+
 ## 0.2.3 (2016-05-15)
 
 Features:
