@@ -15,11 +15,7 @@ import android.widget.Toast;
 import com.waynejo.androidndkgif.GifDecoder;
 import com.waynejo.androidndkgif.GifEncoder;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 public class ExampleActivity extends Activity {
 
@@ -40,7 +36,7 @@ public class ExampleActivity extends Activity {
 
                 final GifDecoder gifDecoder = new GifDecoder();
                 final boolean isSucceeded = gifDecoder.load(destFile);
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if (isSucceeded) {
@@ -89,14 +85,16 @@ public class ExampleActivity extends Activity {
                     encodeGIF();
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }).start();
     }
 
-    private void encodeGIF() throws FileNotFoundException {
+    private void encodeGIF() throws IOException {
         String dstFile = "result.gif";
-        String filePath = Environment.getExternalStorageDirectory()  + File.separator + dstFile;
+        final String filePath = Environment.getExternalStorageDirectory() + File.separator + dstFile;
         int width = 50;
         int height = 50;
         int delayMs = 100;
@@ -114,6 +112,13 @@ public class ExampleActivity extends Activity {
             gifEncoder.encodeFrame(bitmap, delayMs);
         }
         gifEncoder.close();
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(ExampleActivity.this, "done : " + filePath, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     public void onDisableDithering(View v) {
