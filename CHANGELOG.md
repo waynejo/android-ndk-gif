@@ -1,3 +1,8 @@
+## 0.2.5 (2016-06-04)
+
+Bugfixes:
+  -  Fix a crash when encoding with little color bitmap.
+
 ## 0.2.4 (2016-05-21)
 
 Bugfixes:
