@@ -534,7 +534,7 @@ void GifEncoder::encodeFrame(uint32_t* pixels, int delayMs)
 	}
 	memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
 
-	Cube cubes[256];
+	Cube cubes[256] = {0, };
 	computeColorTable(pixels, cubes);
 	writeContents(cubes, (uint8_t*)pixels, delayMs / 10, imageRect);
 	
