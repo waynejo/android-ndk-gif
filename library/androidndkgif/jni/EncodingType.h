@@ -1,0 +1,7 @@
+
+#pragma once
+
+enum EncodingType {
+	ENCODING_TYPE_SIMPLE_FAST,
+	ENCODING_TYPE_NORMAL_LOW_MEMORY
+};
