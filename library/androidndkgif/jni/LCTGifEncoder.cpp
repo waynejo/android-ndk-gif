@@ -22,7 +22,7 @@ LCTGifEncoder::LCTGifEncoder() {
 }
 
 LCTGifEncoder::~LCTGifEncoder() {
-
+	release();
 }
 
 bool LCTGifEncoder::init(uint16_t width, uint16_t height, const char* fileName) {
@@ -49,16 +49,19 @@ bool LCTGifEncoder::init(uint16_t width, uint16_t height, const char* fileName) 
 void LCTGifEncoder::release() {
 	if (NULL != lastPixels) {
 		delete[] lastPixels;
+		lastPixels = NULL;
 	}
 
 	if (NULL != lastColorReducedPixels) {
 		delete[] lastColorReducedPixels;
+		lastColorReducedPixels = NULL;
 	}
 
 	if (NULL != fp) {
 		uint8_t gifFileTerminator = 0x3B;
 		fwrite(&gifFileTerminator, 1, 1, fp);
 		fclose(fp);
+		fp = NULL;
 	}
 }
 
