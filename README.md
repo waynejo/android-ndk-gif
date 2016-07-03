@@ -6,9 +6,12 @@ GIF library built with ndk and gradle in aar format for usage with android gradl
 Last Change Log
 ========
 * Add ENCODING_TYPE_SIMPLE_FAST, ENCODING_TYPE_NORMAL_LOW_MEMORY, ENCODING_TYPE_STABLE_HIGH_MEMORY option.
- - ENCODING_TYPE_SIMPLE_FAST : use low memory and encode fast. But low quality.
- - ENCODING_TYPE_NORMAL_LOW_MEMORY : use lower memory than ENCODING_TYPE_STABLE_HIGH_MEMORY. and image changing dynamic.
- - ENCODING_TYPE_STABLE_HIGH_MEMORY : slowest and use high memory. But high quality and stable image sequence.
+ - ENCODING_TYPE_SIMPLE_FAST 
+   - use low memory and encode fast. But low quality.
+ - ENCODING_TYPE_NORMAL_LOW_MEMORY 
+   - use lower memory than ENCODING_TYPE_STABLE_HIGH_MEMORY. and image changing dynamic.
+ - ENCODING_TYPE_STABLE_HIGH_MEMORY 
+   - slowest and use high memory. But high quality and stable image sequence.
 
 Feature
 ========
