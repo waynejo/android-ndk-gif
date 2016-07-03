@@ -10,7 +10,7 @@ public class GifEncoder {
         System.loadLibrary("androidndkgif");
     }
 
-    enum EncodingType {
+    public enum EncodingType {
         ENCODING_TYPE_SIMPLE_FAST,
         ENCODING_TYPE_NORMAL_LOW_MEMORY,
         ENCODING_TYPE_STABLE_HIGH_MEMORY

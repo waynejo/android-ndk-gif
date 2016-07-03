@@ -106,7 +106,7 @@ void GCTGifEncoder::buildColorTable(Cube cubes[256]) {
 	uint32_t* allPixels = new uint32_t[pixelNum];
 
 	int32_t idx = 0;
-	for (std::vector<FrameInfo*>::iterator i = images.begin(); i != images.end(); ++i) {
+	for (std::vector<FrameInfo*>::iterator i = images.begin(); i != images.end(); ++i, ++idx) {
 		memcpy(allPixels + width * height * idx, (*i)->pixels, width * height * sizeof(allPixels[0]));
 	}
 	
