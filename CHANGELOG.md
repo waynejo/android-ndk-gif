@@ -1,3 +1,12 @@
+## 0.3.0 (2016-07-04)
+  - Add some encoding options.
+    - ENCODING_TYPE_SIMPLE_FAST 
+      - use low memory and encode fast. But low quality.
+    - ENCODING_TYPE_NORMAL_LOW_MEMORY 
+      - use lower memory than ENCODING_TYPE_STABLE_HIGH_MEMORY. and image changing dynamic.
+    - ENCODING_TYPE_STABLE_HIGH_MEMORY 
+      - slowest and use high memory. But high quality and stable image sequence.
+
 ## 0.2.5 (2016-06-04)
 
 Bugfixes:
