@@ -1,12 +1,13 @@
 #pragma once
 
+#include "BaseGifEncoder.h"
 #include "EncodingType.h"
 
 class GifEncoder {
 private:
-	IGifEncoder* gifEncoder;
+	BaseGifEncoder* gifEncoder;
 public:
-	GifEncoder(EncodingType encodingType = EncodingType::ENCODING_TYPE_NORMAL_LOW_MEMORY);
+	GifEncoder(EncodingType encodingType = ENCODING_TYPE_NORMAL_LOW_MEMORY);
 
 	bool init(uint16_t width, uint16_t height, const char* fileName);
 	void release();

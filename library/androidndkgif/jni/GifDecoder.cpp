@@ -119,7 +119,7 @@ bool GifDecoder::readHeader(DataBlock* dataBlock)
 		if (!readColorTable(dataBlock, gct, gctSize)) {
 			return false;
 		}
-		bgColor = 0xFF000000 | gct[bgIndex];
+		bgColor = gct[bgIndex];
  	}
 	return true;
 }
@@ -410,6 +410,9 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 		// Pop a pixel off the pixel stack.
 		top--;
 		pixels[pi++] = pixelStack[top];
+		if (255 == pixelStack[top]) {
+			int a = 0;
+		}
 		i++;
 	}
 	for (i = pi; i < npix; i++) {

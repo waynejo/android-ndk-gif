@@ -30,10 +30,26 @@ struct Cube {
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-class IGifEncoder
+class BaseGifEncoder
 {
+protected:
+	uint16_t width;
+	uint16_t height;
+	int32_t frameNum;
+	uint32_t* lastColorReducedPixels;
+	uint32_t lastRootColor;
+	bool useDither;
+	uint32_t* lastPixels;
+
+	FILE* fp;
+
+	void qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to);
+	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram);
+	void computeColorTable(uint32_t* pixels, Cube* cubes, uint32_t pixelNum);
+	void reduceColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels);
 public:
-	virtual ~IGifEncoder() {}
+	BaseGifEncoder();
+	virtual ~BaseGifEncoder() {}
 
 	virtual bool init(uint16_t width, uint16_t height, const char* fileName) = 0;
 	virtual void release() = 0;

@@ -1,4 +1,8 @@
 #include "com_waynejo_androidndkgif_GifEncoder.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 #include "GifEncoder.h"
 #include <string.h>
 #include <wchar.h>
@@ -9,9 +13,9 @@ extern "C" {
 #endif
 
 JNIEXPORT jlong JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeInit
-  (JNIEnv *env, jobject, jint width, jint height, jstring path)
+  (JNIEnv *env, jobject, jint width, jint height, jstring path, jint encodingType)
 {
-    GifEncoder* gifEncoder = new GifEncoder();
+    GifEncoder* gifEncoder = new GifEncoder(static_cast<EncodingType>(encodingType));
     const char* pathChars = env->GetStringUTFChars(path, 0);
     bool result = gifEncoder->init(width, height, pathChars);
     env->ReleaseStringUTFChars(path, pathChars);

@@ -1,9 +1,10 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "IGifEncoder.h"
+#include "BaseGifEncoder.h"
 #include "LCTGifEncoder.h"
 #include "SimpleGCTEncoder.h"
+#include "GCTGifEncoder.h"
 #include "GifEncoder.h"
 #include "BitWritingBlock.h"
 #include <vector>
@@ -16,6 +17,9 @@ GifEncoder::GifEncoder(EncodingType encodingType)
 	{
 	case ENCODING_TYPE_SIMPLE_FAST:
 		gifEncoder = new SimpleGCTGifEncoder();
+		break;
+	case ENCODING_TYPE_STABLE_HIGH_MEMORY:
+		gifEncoder = new GCTGifEncoder();
 		break;
 	case ENCODING_TYPE_NORMAL_LOW_MEMORY:
 	default:

@@ -1,24 +1,13 @@
 #pragma once
 
-class LCTGifEncoder : public IGifEncoder
+class LCTGifEncoder : public BaseGifEncoder
 {
 	static const int32_t MAX_STACK_SIZE = 4096;
 	static const int32_t BYTE_NUM = 256;
 
-	uint16_t width;
-	uint16_t height;
 	int32_t frameNum;
-	bool useDither;
-	uint32_t* lastPixels;
-	uint32_t* lastColorReducedPixels;
-	uint32_t lastRootColor;
-	FILE* fp;
 
 	void removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect);
-	void qsortColorHistogram(uint32_t* imageColorHistogram, int32_t maxColor, uint32_t from, uint32_t to);
-	void updateColorHistogram(Cube* nextCube, Cube* maxCube, int32_t maxColor, uint32_t* imageColorHistogram);
-	void computeColorTable(uint32_t* pixels, Cube* cubes);
-	void reduceColor(Cube* cubes, uint32_t cubeNum, uint32_t* pixels);
 
 	void writeHeader();
 	bool writeLSD();

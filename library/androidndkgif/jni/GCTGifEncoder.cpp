@@ -3,12 +3,12 @@
 #include <string.h>
 #include <vector>
 #include "BaseGifEncoder.h"
-#include "SimpleGCTEncoder.h"
+#include "GCTGifEncoder.h"
 #include "BitWritingBlock.h"
 
 using namespace std;
 
-SimpleGCTGifEncoder::SimpleGCTGifEncoder() {
+GCTGifEncoder::GCTGifEncoder() {
 	// init width, height to 1, to prevent divide by zero.
 	width = 1;
 	height = 1;
@@ -21,11 +21,11 @@ SimpleGCTGifEncoder::SimpleGCTGifEncoder() {
 	lastRootColor = GREEN;
 }
 
-SimpleGCTGifEncoder::~SimpleGCTGifEncoder() {
+GCTGifEncoder::~GCTGifEncoder() {
 	release();
 }
 
-bool SimpleGCTGifEncoder::init(uint16_t width, uint16_t height, const char* fileName) {
+bool GCTGifEncoder::init(uint16_t width, uint16_t height, const char* fileName) {
 	this->width = width;
 	this->height = height;
 
@@ -42,42 +42,80 @@ bool SimpleGCTGifEncoder::init(uint16_t width, uint16_t height, const char* file
 	}
 	lastColorReducedPixels = new uint32_t[width * height];
 
-	writeHeader();
 	return true;
 }
 
-void SimpleGCTGifEncoder::release() {
+void GCTGifEncoder::release() {
+	Cube cubes[256] = {0, };
+	buildColorTable(cubes);
+	writeHeader(cubes);
+
+	for (std::vector<FrameInfo*>::iterator i = images.begin(); i != images.end(); ++i) {
+		uint32_t pixelNum = width * height;
+		uint32_t* pixels = (*i)->pixels;
+		EncodeRect imageRect;
+		imageRect.x = 0;
+		imageRect.y = 0;
+		imageRect.width = width;
+		imageRect.height = height;
+
+		if (0 != frameNum) {
+			removeSamePixels((uint8_t*)lastPixels, (uint8_t*)pixels, &imageRect);
+		}
+		memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
+
+		reduceColor(cubes, 255, pixels);
+		writeContents((uint8_t*)pixels, (*i)->delayMs / 10, imageRect);
+
+		++frameNum;
+
+		delete (*i)->pixels;
+		delete (*i);
+	}
+	images.clear();
+
 	if (NULL != lastPixels) {
 		delete[] lastPixels;
-		lastPixels = NULL;
 	}
 
 	if (NULL != lastColorReducedPixels) {
 		delete[] lastColorReducedPixels;
-		lastPixels = NULL;
 	}
 
 	if (NULL != fp) {
 		uint8_t gifFileTerminator = 0x3B;
 		fwrite(&gifFileTerminator, 1, 1, fp);
 		fclose(fp);
-		fp = NULL;
 	}
 }
 
-void SimpleGCTGifEncoder::setDither(bool useDither) {
+void GCTGifEncoder::setDither(bool useDither) {
 	this->useDither = useDither;
 }
 
-uint16_t SimpleGCTGifEncoder::getWidth() {
+uint16_t GCTGifEncoder::getWidth() {
 	return width;
 }
 
-uint16_t SimpleGCTGifEncoder::getHeight() {
+uint16_t GCTGifEncoder::getHeight() {
 	return height;
 }
 
-void SimpleGCTGifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect)
+void GCTGifEncoder::buildColorTable(Cube cubes[256]) {
+	uint32_t pixelNum = width * height * images.size();
+	uint32_t* allPixels = new uint32_t[pixelNum];
+
+	int32_t idx = 0;
+	for (std::vector<FrameInfo*>::iterator i = images.begin(); i != images.end(); ++i) {
+		memcpy(allPixels + width * height * idx, (*i)->pixels, width * height * sizeof(allPixels[0]));
+	}
+	
+	computeColorTable(allPixels, cubes, pixelNum);
+
+	delete[] allPixels;
+}
+
+void GCTGifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect)
 {
 	int32_t bytesPerLine = width * 4;
 	int32_t beginY = 0;
@@ -126,67 +164,14 @@ void SimpleGCTGifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeR
 	rect->height = endY - beginY;
 }
 
-void SimpleGCTGifEncoder::reduceColor(uint32_t* pixels)
-{
-	const int32_t ERROR_PROPAGATION_DIRECTION_NUM = 4;
-	const int32_t ERROR_PROPAGATION_DIRECTION_X[] = {1, -1, 0, 1};
-	const int32_t ERROR_PROPAGATION_DIRECTION_Y[] = {0, 1, 1, 1};
-	const int32_t ERROR_PROPAGATION_DIRECTION_WEIGHT[] = {7, 3, 5, 1};
-
-	uint32_t pixelNum = width * height;
-	uint8_t* dst = (uint8_t*)pixels;
-	uint32_t* src = pixels;
-	uint32_t* last = src + pixelNum;
-
-	for (uint32_t y = 0; y < height; ++y) {
-		for (uint32_t x = 0; x < width; ++x) {
-			uint32_t color = *src;
-			if (0 == (color >> 24)) {
-				*dst = 255; // transparent color
-			} else {
-				int16_t r = color & 0xFF;
-				int16_t g = (color >> 8) & 0xFF;
-				int16_t b = (color >> 16) & 0xFF;
-				uint16_t rIdx = (r * (R_RANGE - 1) + 127) / 255;
-				uint16_t gIdx = (g * (G_RANGE - 1) + 127) / 255;
-				uint16_t bIdx = (b * (B_RANGE - 1) + 127) / 255;
-				*dst = (uint8_t)(rIdx * (G_RANGE * B_RANGE) + gIdx * B_RANGE + bIdx);
-
-				if (useDither) {
-					int16_t diffR = r - (255 * rIdx / (R_RANGE - 1));
-					int16_t diffG = g - (255 * gIdx / (G_RANGE - 1));
-					int16_t diffB = b - (255 * bIdx / (B_RANGE - 1));
-					for (int directionId = 0; directionId < ERROR_PROPAGATION_DIRECTION_NUM; ++directionId) {
-						uint32_t* pixel = src + ERROR_PROPAGATION_DIRECTION_X[directionId] + ERROR_PROPAGATION_DIRECTION_Y[directionId] * width;
-						if (x + ERROR_PROPAGATION_DIRECTION_X[directionId] >= width ||
-							y + ERROR_PROPAGATION_DIRECTION_Y[directionId] >= height || 0 == (*src >> 24)) {
-								continue;
-						}
-						int32_t weight = ERROR_PROPAGATION_DIRECTION_WEIGHT[directionId];
-						int32_t dstR = ((int32_t)((*pixel) & 0xFF) + (diffR * weight + 8) / 16);
-						int32_t dstG = (((int32_t)((*pixel) >> 8) & 0xFF) + (diffG * weight + 8) / 16);
-						int32_t dstB = (((int32_t)((*pixel) >> 16) & 0xFF) + (diffB * weight + 8) / 16);
-						int32_t dstA = (int32_t)(*pixel >> 24);
-						int32_t newR = MIN(255, MAX(0, dstR));
-						int32_t newG = MIN(255, MAX(0, dstG));
-						int32_t newB = MIN(255, MAX(0, dstB));
-						*pixel = (dstA << 24) | (newB << 16) | (newG << 8) | newR;
-					}
-				}
-			}
-			++dst;
-			++src;
-		}
-	}
-}
-
-void SimpleGCTGifEncoder::writeHeader()
+void GCTGifEncoder::writeHeader(Cube* cubes)
 {
 	fwrite("GIF89a", 6, 1, fp);
 	writeLSD();
+	writeGCT(cubes);
 }
 
-bool SimpleGCTGifEncoder::writeLSD()
+bool GCTGifEncoder::writeLSD()
 {
 	// logical screen size
 	fwrite(&width, 2, 1, fp);
@@ -206,33 +191,20 @@ bool SimpleGCTGifEncoder::writeLSD()
 	uint8_t aspectRatio = 0;
 	fwrite(&aspectRatio, 1, 1, fp);
 
-	writeGCT(fp);
-
 	return true;
 }
 
-void SimpleGCTGifEncoder::writeGCT(FILE* fp)  {
+void GCTGifEncoder::writeGCT(Cube* cubes)  {
 	uint8_t colorTable[256][3];
-	int32_t idx = 0;
-	for (int32_t r = 0; r < R_RANGE; ++r) {
-		for (int32_t g = 0; g < G_RANGE; ++g) {
-			for (int32_t b = 0; b < B_RANGE; ++b) {
-				colorTable[idx][0] = 255 * r / (R_RANGE - 1);
-				colorTable[idx][1] = 255 * g / (G_RANGE - 1);
-				colorTable[idx][2] = 255 * b / (B_RANGE - 1);
-				++idx;
-			}
-		}
-	}
-	for (; idx < 256; ++idx) {
-		colorTable[idx][0] = 0;
-		colorTable[idx][1] = 0;
-		colorTable[idx][2] = 0;
+	for (int32_t idx = 0; idx < 256; ++idx, ++cubes) {
+		colorTable[idx][0] = cubes->color[0];
+		colorTable[idx][1] = cubes->color[1];
+		colorTable[idx][2] = cubes->color[2];
 	}
 	fwrite(colorTable, 256 * 3, 1, fp);
 }
 
-bool SimpleGCTGifEncoder::writeContents(uint8_t* pixels, uint16_t delay, const EncodeRect& encodingRect)
+bool GCTGifEncoder::writeContents(uint8_t* pixels, uint16_t delay, const EncodeRect& encodingRect)
 {
 	writeNetscapeExt();
 
@@ -242,7 +214,7 @@ bool SimpleGCTGifEncoder::writeContents(uint8_t* pixels, uint16_t delay, const E
 	return true;
 }
 
-bool SimpleGCTGifEncoder::writeNetscapeExt()
+bool GCTGifEncoder::writeNetscapeExt()
 {
 	//                                   code extCode,                                                            size,       loop count, end
 	const uint8_t netscapeExt[] = {0x21, 0xFF, 0x0B, 'N', 'E', 'T', 'S', 'C', 'A', 'P', 'E', '2', '.', '0', 0x03, 0x01, 0x00, 0x00, 0x00};
@@ -250,7 +222,7 @@ bool SimpleGCTGifEncoder::writeNetscapeExt()
 	return true;
 }
 
-bool SimpleGCTGifEncoder::writeGraphicControlExt(uint16_t delay)
+bool GCTGifEncoder::writeGraphicControlExt(uint16_t delay)
 {
 	uint8_t disposalMethod = 0; // dispose
 	uint8_t userInputFlag = 0; // User input is not expected.
@@ -263,7 +235,7 @@ bool SimpleGCTGifEncoder::writeGraphicControlExt(uint16_t delay)
 	return true;
 }
 
-bool SimpleGCTGifEncoder::writeFrame(uint8_t* pixels, const EncodeRect& encodingRect)
+bool GCTGifEncoder::writeFrame(uint8_t* pixels, const EncodeRect& encodingRect)
 {
 	uint8_t code = 0x2C;
 	fwrite(&code, 1, 1, fp);
@@ -286,7 +258,7 @@ bool SimpleGCTGifEncoder::writeFrame(uint8_t* pixels, const EncodeRect& encoding
 	return true;
 }
 
-bool SimpleGCTGifEncoder::writeLCT(int32_t colorNum, Cube* cubes)
+bool GCTGifEncoder::writeLCT(int32_t colorNum, Cube* cubes)
 {
 	uint32_t color;
 	Cube* cube;
@@ -298,7 +270,7 @@ bool SimpleGCTGifEncoder::writeLCT(int32_t colorNum, Cube* cubes)
 	return true;
 }
 
-bool SimpleGCTGifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect)
+bool GCTGifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect)
 {
 	uint32_t pixelNum = width * height;
 	uint8_t* endPixels = pixels + (encodingRect.y + encodingRect.height) * width + encodingRect.x + encodingRect.width;
@@ -366,21 +338,10 @@ bool SimpleGCTGifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& enc
 	return true;
 }
 
-void SimpleGCTGifEncoder::encodeFrame(uint32_t* pixels, int32_t delayMs) {
-	uint32_t pixelNum = width * height;
-	EncodeRect imageRect;
-	imageRect.x = 0;
-	imageRect.y = 0;
-	imageRect.width = width;
-	imageRect.height = height;
-
-	if (0 != frameNum) {
-		removeSamePixels((uint8_t*)lastPixels, (uint8_t*)pixels, &imageRect);
-	}
-	memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
-
-	reduceColor(pixels);
-	writeContents((uint8_t*)pixels, delayMs / 10, imageRect);
-
-	++frameNum;
+void GCTGifEncoder::encodeFrame(uint32_t* pixels, int32_t delayMs) {
+	FrameInfo* frameInfo = new FrameInfo();
+	frameInfo->delayMs = delayMs;
+	frameInfo->pixels = new uint32_t[width * height];
+	memcpy(frameInfo->pixels, pixels, width * height * sizeof(uint32_t));
+	images.push_back(frameInfo);
 }
