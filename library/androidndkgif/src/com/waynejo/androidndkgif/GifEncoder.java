@@ -10,7 +10,13 @@ public class GifEncoder {
         System.loadLibrary("androidndkgif");
     }
 
-    private native long nativeInit(int width, int height, String path);
+    public enum EncodingType {
+        ENCODING_TYPE_SIMPLE_FAST,
+        ENCODING_TYPE_NORMAL_LOW_MEMORY,
+        ENCODING_TYPE_STABLE_HIGH_MEMORY
+    }
+
+    private native long nativeInit(int width, int height, String path, int encodingType);
     private native void nativeClose(long handle);
     private native void nativeSetDither(long handle, boolean useDither);
 
@@ -19,10 +25,14 @@ public class GifEncoder {
     private long instance = 0;
 
     public void init(int width, int height, String path) throws FileNotFoundException {
+        init(width, height, path, EncodingType.ENCODING_TYPE_NORMAL_LOW_MEMORY);
+    }
+
+    public void init(int width, int height, String path, EncodingType encodingType) throws FileNotFoundException {
         if (0 != instance) {
             close();
         }
-        instance = nativeInit(width, height, path);
+        instance = nativeInit(width, height, path, encodingType.ordinal());
         if (0 == instance) {
             throw new FileNotFoundException();
         }

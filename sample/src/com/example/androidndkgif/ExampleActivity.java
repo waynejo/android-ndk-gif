@@ -100,7 +100,7 @@ public class ExampleActivity extends Activity {
         int delayMs = 100;
 
         GifEncoder gifEncoder = new GifEncoder();
-        gifEncoder.init(width, height, filePath);
+        gifEncoder.init(width, height, filePath, GifEncoder.EncodingType.ENCODING_TYPE_NORMAL_LOW_MEMORY);
         gifEncoder.setDither(useDither);
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);

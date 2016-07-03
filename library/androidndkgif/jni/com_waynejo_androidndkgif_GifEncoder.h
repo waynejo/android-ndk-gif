@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     com_waynejo_androidndkgif_GifEncoder
  * Method:    nativeInit
- * Signature: (IILjava/lang/String;)J
+ * Signature: (IILjava/lang/String;I)J
  */
 JNIEXPORT jlong JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeInit
-  (JNIEnv *, jobject, jint, jint, jstring);
+  (JNIEnv *, jobject, jint, jint, jstring, jint);
 
 /*
  * Class:     com_waynejo_androidndkgif_GifEncoder
