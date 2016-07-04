@@ -62,7 +62,7 @@ Encoding
 ```java
 
 GifEncoder gifEncoder = new GifEncoder();
-gifEncoder.init(width, height, filePath, EncodingType.ENCODING_TYPE_NORMAL_LOW_MEMORY);
+gifEncoder.init(width, height, filePath, GifEncoder.EncodingType.ENCODING_TYPE_NORMAL_LOW_MEMORY);
 
 // Bitmap is MUST ARGB_8888.
 gifEncoder.encodeFrame(bitmap1, delayMs);
