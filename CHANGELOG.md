@@ -1,3 +1,8 @@
+## 0.3.1 (2016-07-25)
+
+Bugfixes:
+  -  Fix issue #3. Remove unexpected data from result file when encode gif.
+
 ## 0.3.0 (2016-07-04)
   - Add some encoding options.
     - ENCODING_TYPE_SIMPLE_FAST 
