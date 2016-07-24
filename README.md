@@ -38,7 +38,7 @@ repositories {
 }
 
 dependencies {
-    compile('com.waynejo:androidndkgif:0.3.0')
+    compile('com.waynejo:androidndkgif:0.3.1')
 }
 ```
 
