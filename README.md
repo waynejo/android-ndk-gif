@@ -18,10 +18,6 @@ Feature
 * GIF Encoding.
 * GIF Decoding.
 
-TODO
-========
-* Update Documents and samples.
-* Add GIF ImageView.
 
 How to use
 ========
