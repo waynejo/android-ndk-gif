@@ -225,7 +225,7 @@ bool LCTGifEncoder::writeLCT(int32_t colorNum, Cube* cubes)
 bool LCTGifEncoder::writeBitmapData(uint8_t* pixels, const EncodeRect& encodingRect)
 {
 	uint32_t pixelNum = width * height;
-	uint8_t* endPixels = pixels + (encodingRect.y + encodingRect.height) * width + encodingRect.x + encodingRect.width;
+	uint8_t* endPixels = pixels + (encodingRect.y + encodingRect.height - 1) * width + encodingRect.x + encodingRect.width;
 	uint8_t dataSize = 8;
 	uint32_t codeSize = dataSize + 1;
 	uint32_t codeMask = (1 << codeSize) - 1;
