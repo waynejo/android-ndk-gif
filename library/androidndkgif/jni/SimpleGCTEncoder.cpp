@@ -54,7 +54,7 @@ void SimpleGCTGifEncoder::release() {
 
 	if (NULL != lastColorReducedPixels) {
 		delete[] lastColorReducedPixels;
-		lastPixels = NULL;
+		lastColorReducedPixels = NULL;
 	}
 
 	if (NULL != fp) {

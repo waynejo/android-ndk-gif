@@ -76,16 +76,19 @@ void GCTGifEncoder::release() {
 
 	if (NULL != lastPixels) {
 		delete[] lastPixels;
+		lastPixels = NULL;
 	}
 
 	if (NULL != lastColorReducedPixels) {
 		delete[] lastColorReducedPixels;
+		lastColorReducedPixels = NULL;
 	}
 
 	if (NULL != fp) {
 		uint8_t gifFileTerminator = 0x3B;
 		fwrite(&gifFileTerminator, 1, 1, fp);
 		fclose(fp);
+		fp = NULL;
 	}
 }
 
