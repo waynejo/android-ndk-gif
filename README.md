@@ -3,7 +3,11 @@ Android NDK GIF Library
 
 GIF library built with ndk and gradle in aar format for usage with android gradle build system.
 
-Last Change Log
+0.3.2 Change Log
+========
+* fix some memory issues.
+
+Encoding Option
 ========
 * Add some encoding options.
  - ENCODING_TYPE_SIMPLE_FAST 
@@ -34,7 +38,7 @@ repositories {
 }
 
 dependencies {
-    compile('com.waynejo:androidndkgif:0.3.1')
+    compile('com.waynejo:androidndkgif:0.3.2')
 }
 ```
 
