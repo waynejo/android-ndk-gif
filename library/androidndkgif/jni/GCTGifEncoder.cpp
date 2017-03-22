@@ -104,6 +104,8 @@ uint16_t GCTGifEncoder::getHeight() {
 	return height;
 }
 
+void GCTGifEncoder::setThreadCount(int32_t threadCount) { }
+
 void GCTGifEncoder::buildColorTable(Cube cubes[256]) {
 	uint32_t pixelNum = width * height * images.size();
 	uint32_t* allPixels = new uint32_t[pixelNum];

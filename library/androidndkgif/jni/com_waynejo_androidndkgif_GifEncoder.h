@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     com_waynejo_androidndkgif_GifEncoder
  * Method:    nativeInit
- * Signature: (IILjava/lang/String;I)J
+ * Signature: (IILjava/lang/String;II)J
  */
 JNIEXPORT jlong JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeInit
-  (JNIEnv *, jobject, jint, jint, jstring, jint);
+  (JNIEnv *, jobject, jint, jint, jstring, jint, jint);
 
 /*
  * Class:     com_waynejo_androidndkgif_GifEncoder
@@ -30,6 +30,14 @@ JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeClose
  */
 JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeSetDither
   (JNIEnv *, jobject, jlong, jboolean);
+
+/*
+ * Class:     com_waynejo_androidndkgif_GifEncoder
+ * Method:    nativeSetThreadCount
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeSetThreadCount
+        (JNIEnv *, jobject, jlong, jint);
 
 /*
  * Class:     com_waynejo_androidndkgif_GifEncoder

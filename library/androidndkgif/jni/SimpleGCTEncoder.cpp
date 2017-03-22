@@ -77,6 +77,8 @@ uint16_t SimpleGCTGifEncoder::getHeight() {
 	return height;
 }
 
+void SimpleGCTGifEncoder::setThreadCount(int32_t threadCount) { }
+
 void SimpleGCTGifEncoder::removeSamePixels(uint8_t* src1, uint8_t* src2, EncodeRect* rect)
 {
 	int32_t bytesPerLine = width * 4;
