@@ -13,9 +13,10 @@ extern "C" {
 #endif
 
 JNIEXPORT jlong JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeInit
-  (JNIEnv *env, jobject, jint width, jint height, jstring path, jint encodingType)
+  (JNIEnv *env, jobject, jint width, jint height, jstring path, jint encodingType, jint threadCount)
 {
     GifEncoder* gifEncoder = new GifEncoder(static_cast<EncodingType>(encodingType));
+    gifEncoder->setThreadCount(threadCount);
     const char* pathChars = env->GetStringUTFChars(path, 0);
     bool result = gifEncoder->init(width, height, pathChars);
     env->ReleaseStringUTFChars(path, pathChars);
@@ -40,6 +41,13 @@ JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeSetDither
 {
     GifEncoder* gifEncoder = (GifEncoder*)handle;
     gifEncoder->setDither(useDither);
+}
+
+JNIEXPORT void JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeSetThreadCount
+  (JNIEnv *, jobject, jlong handle, jint threadCount)
+{
+    GifEncoder* gifEncoder = (GifEncoder*)handle;
+    gifEncoder->setThreadCount(threadCount);
 }
 
 JNIEXPORT jboolean JNICALL Java_com_waynejo_androidndkgif_GifEncoder_nativeEncodeFrame

@@ -30,6 +30,7 @@ public:
 	virtual void setDither(bool useDither);
 	virtual uint16_t getWidth();
 	virtual uint16_t getHeight();
+	virtual void setThreadCount(int32_t threadCount);
 
 	virtual void encodeFrame(uint32_t* pixels, int32_t delayMs);
 };
