@@ -14,12 +14,15 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import com.waynejo.androidndkgif.GifDecoder;
 import com.waynejo.androidndkgif.GifEncoder;
+import com.waynejo.androidndkgif.GifImage;
+import com.waynejo.androidndkgif.GifImageIterator;
 
 import java.io.*;
 
 public class ExampleActivity extends Activity {
 
     private boolean useDither = true;
+    private ImageView imageView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -27,28 +30,7 @@ public class ExampleActivity extends Activity {
 
         setContentView(R.layout.main);
 
-        final ImageView imageView = (ImageView) findViewById(R.id.image_view);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String destFile = setupSampleFile();
-
-                final GifDecoder gifDecoder = new GifDecoder();
-                final boolean isSucceeded = gifDecoder.load(destFile);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isSucceeded) {
-                            Bitmap bitmap = gifDecoder.frame(1);
-                            imageView.setImageBitmap(bitmap);
-                        } else {
-                            Toast.makeText(ExampleActivity.this, "Failed", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            }
-        }).start();
+        imageView = (ImageView) findViewById(R.id.image_view);
     }
 
     private String setupSampleFile() {
@@ -75,6 +57,62 @@ public class ExampleActivity extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void onDecodeGIF(View v) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String destFile = setupSampleFile();
+
+                final GifDecoder gifDecoder = new GifDecoder();
+                final boolean isSucceeded = gifDecoder.load(destFile);
+                runOnUiThread(new Runnable() {
+                    int idx = 0;
+                    @Override
+                    public void run() {
+                        if (isSucceeded) {
+                            Bitmap bitmap = gifDecoder.frame(idx);
+                            imageView.setImageBitmap(bitmap);
+                            if (idx + 1 < gifDecoder.frameNum()) {
+                                imageView.postDelayed(this, gifDecoder.delay(idx));
+                            }
+                            ++idx;
+                        } else {
+                            Toast.makeText(ExampleActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    public void onDecodeGIFUsingIterator(View v) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String destFile = setupSampleFile();
+
+                final GifDecoder gifDecoder = new GifDecoder();
+                final GifImageIterator iterator = gifDecoder.loadUsingIterator(destFile);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (iterator.hasNext()) {
+                            GifImage next = iterator.next();
+                            if (null != next) {
+                                imageView.setImageBitmap(next.bitmap);
+                                imageView.postDelayed(this, next.delayMs);
+                            } else {
+                                Toast.makeText(ExampleActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            iterator.close();
+                        }
+                    }
+                });
+            }
+        }).start();
     }
 
     public void onEncodeGIF(View v) {

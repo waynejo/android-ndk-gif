@@ -1,5 +1,6 @@
 #include "com_waynejo_androidndkgif_GifDecoder.h"
 #include "GifDecoder.h"
+#include "BitmapIterator.h"
 #include <string.h>
 #include <wchar.h>
 #include <android/bitmap.h>
@@ -29,6 +30,16 @@ JNIEXPORT jboolean JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeLoad
     return result;
 }
 
+JNIEXPORT jlong JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeLoadUsingIterator
+  (JNIEnv * env, jobject, jlong handle, jstring fileName)
+{
+    const char* fileNameChars = env->GetStringUTFChars(fileName, 0);
+    BitmapIterator* result = ((GifDecoder*)handle)->loadUsingIterator(fileNameChars);
+    env->ReleaseStringUTFChars(fileName, fileNameChars);
+
+    return (jlong)result;
+}
+
 JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFrameCount
   (JNIEnv *, jobject, jlong handle)
 {
@@ -42,7 +53,7 @@ JNIEXPORT jobject JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetFra
     int imgWidth = decoder->getWidth();
     int imgHeight = decoder->getHeight();
 
-    // Creaing Bitmap Config Class
+    // Creating Bitmap Config Class
     jclass bmpCfgCls = env->FindClass("android/graphics/Bitmap$Config");
     jmethodID bmpClsValueOfMid = env->GetStaticMethodID(bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
     jobject jBmpCfg = env->CallStaticObjectMethod(bmpCfgCls, bmpClsValueOfMid, env->NewStringUTF("ARGB_8888"));
@@ -81,6 +92,52 @@ JNIEXPORT jint JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeGetHeight
   (JNIEnv *, jobject, jlong handle)
 {
     return ((GifDecoder*)handle)->getHeight();
+}
+
+JNIEXPORT jboolean JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeBitmapIteratorHasNext
+  (JNIEnv *, jobject, jlong handle)
+{
+    return ((BitmapIterator*)handle)->hasNext();
+}
+
+JNIEXPORT jobject JNICALL Java_com_waynejo_androidndkgif_GifDecoder_nativeBitmapIteratornext
+  (JNIEnv *env, jobject, jlong decoderHandle, jlong iteratorHandle)
+{
+    const uint32_t* frame = NULL;
+    uint32_t delayMs = 0;
+    bool result = ((BitmapIterator*)iteratorHandle)->next(&frame, &delayMs);
+    if (!result) {
+        return NULL;
+    }
+
+    GifDecoder* decoder = (GifDecoder*)decoderHandle;
+    int imgWidth = decoder->getWidth();
+    int imgHeight = decoder->getHeight();
+
+    // Creating Bitmap Config Class
+    jclass bmpCfgCls = env->FindClass("android/graphics/Bitmap$Config");
+    jmethodID bmpClsValueOfMid = env->GetStaticMethodID(bmpCfgCls, "valueOf", "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
+    jobject jBmpCfg = env->CallStaticObjectMethod(bmpCfgCls, bmpClsValueOfMid, env->NewStringUTF("ARGB_8888"));
+
+    // Creating a Bitmap Class
+    jclass bmpCls = env->FindClass("android/graphics/Bitmap");
+    jmethodID createBitmapMid = env->GetStaticMethodID(bmpCls, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+    jobject jBmpObj = env->CallStaticObjectMethod(bmpCls, createBitmapMid, imgWidth, imgHeight, jBmpCfg);
+
+    void* bitmapPixels;
+    if (AndroidBitmap_lockPixels(env, jBmpObj, &bitmapPixels) < 0) {
+        return NULL;
+    }
+    uint32_t* src = (uint32_t*) bitmapPixels;
+    int stride = imgWidth * 4;
+    int pixelsCount = stride * imgHeight;
+    memcpy(bitmapPixels, frame, pixelsCount);
+    AndroidBitmap_unlockPixels(env, jBmpObj);
+
+    // Creating a GifImageClass
+    jclass gifImageCls = env->FindClass("com/waynejo/androidndkgif/GifImage");
+    jmethodID gifImageClsInit = env->GetMethodID(gifImageCls, "<init>", "(Landroid/graphics/Bitmap;I)V");
+    return env->NewObject(gifImageCls, gifImageClsInit, jBmpObj, delayMs);
 }
 
 #ifdef __cplusplus

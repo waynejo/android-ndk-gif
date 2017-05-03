@@ -12,15 +12,32 @@
             android:scaleType="fitXY"/>
 
     <Button
+        android:id="@+id/decode_gif_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="decode GIF"
+        android:onClick="onDecodeGIF"/>
+
+    <Button
+        android:id="@+id/decode_gif_using_iterator_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/decode_gif_btn"
+        android:text="decode GIF using iterator"
+        android:onClick="onDecodeGIFUsingIterator"/>
+
+    <Button
         android:id="@+id/encode_gif_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/decode_gif_btn"
         android:text="encode GIF"
         android:onClick="onEncodeGIF"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/decode_gif_btn"
         android:layout_toRightOf="@id/encode_gif_btn"
         android:text="disable dithering"
         android:onClick="onDisableDithering"/>
