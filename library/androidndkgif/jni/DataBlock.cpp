@@ -7,6 +7,11 @@ DataBlock::DataBlock(const uint8_t* data, int32_t remain) :
 	this->data = data;
 }
 
+DataBlock::DataBlock(const DataBlock& dataBlock)
+{
+	this->data = dataBlock.data;
+	this->remain = dataBlock.remain;
+}
 
 DataBlock::~DataBlock(void)
 {

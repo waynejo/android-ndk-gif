@@ -1,12 +1,16 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <stdint.h>
 #include "DataBlock.h"
 #include "GifFrame.h"
 
+class BitmapIterator;
+
 class GifDecoder
 {
+	friend class BitmapIterator;
 private:
 	static const int32_t MAX_STACK_SIZE = 4096;
 
@@ -36,13 +40,15 @@ private:
 	uint32_t* image;
 	const uint32_t* lastBitmap;
 
+	BitmapIterator* lastBitmapIterator;
+
 	void init();
 
 	bool readLSD(DataBlock* dataBlock);
 	bool readColorTable(DataBlock* dataBlock, uint32_t* colorTable, int32_t ncolors);
 	bool readHeader(DataBlock* dataBlock);
 
-	bool readContents(DataBlock* dataBlock);
+	bool readContents(DataBlock* dataBlock, bool isAFrameNeeded = false);
 	bool skip(DataBlock* dataBlock);
 	bool readBlock(DataBlock* dataBlock, uint8_t* blockSize);
 	bool readNetscapeExt(DataBlock* dataBlock);
@@ -57,7 +63,9 @@ public:
 	~GifDecoder(void);
 
 	bool load(const char* fileName);
+	BitmapIterator* loadUsingIterator(const char* fileName);
 	bool loadFromMemory(const uint8_t* data, uint32_t size);
+	BitmapIterator* loadFromMemoryUsingIterator(std::shared_ptr<uint8_t> data, uint32_t size);
 	uint32_t getFrameCount();
 	const uint32_t* getFrame(int32_t n);
 	uint32_t getDelay(int32_t n);
