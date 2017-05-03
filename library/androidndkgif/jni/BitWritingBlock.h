@@ -2,6 +2,7 @@
 
 #include <list>
 #include <stdint.h>
+#include <stdio.h>
 
 class BitWritingBlock {
 	static const int32_t BLOCK_SIZE = 255;

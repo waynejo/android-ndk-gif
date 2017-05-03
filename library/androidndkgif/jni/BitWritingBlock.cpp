@@ -1,4 +1,5 @@
 #include "BitWritingBlock.h"
+#include <memory>
 
 using namespace std;
 

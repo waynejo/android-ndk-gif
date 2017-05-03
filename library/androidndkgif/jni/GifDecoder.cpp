@@ -6,8 +6,8 @@ template< typename T >
 struct array_deleter
 {
 	void operator ()( T const * p)
-	{ 
-		delete[] p; 
+	{
+		delete[] p;
 	}
 };
 
@@ -47,7 +47,7 @@ void GifDecoder::init()
 	lastBitmap = NULL;
 }
 
-bool GifDecoder::load(const char* fileName) 
+bool GifDecoder::load(const char* fileName)
 {
 	init();
 
@@ -74,7 +74,7 @@ BitmapIterator* GifDecoder::loadUsingIterator(const char* fileName)
 
 	FILE* fp = fopen(fileName, "rb");
 	if (NULL == fp) {
-		return false;
+		return NULL;
 	}
 	fseek(fp, 0, SEEK_END);
 	int32_t fileSize = ftell(fp);
@@ -370,7 +370,7 @@ bool GifDecoder::decodeBitmapData(DataBlock* dataBlock)
 		delete[] pixels;
 		pixels = new uint8_t[npix];
 	}
-	
+
 	uint16_t prefix[MAX_STACK_SIZE];
 	uint8_t suffix[MAX_STACK_SIZE];
 	uint8_t pixelStack[MAX_STACK_SIZE + 1];

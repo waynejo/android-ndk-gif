@@ -183,7 +183,7 @@ bool LCTGifEncoder::writeGraphicControlExt(uint16_t delay)
 
 	uint8_t packed = (disposalMethod << 2) | (userInputFlag << 1) | transparencyFlag;
 	//                                                     size, packed, delay(2), transIndex, terminator
-	const uint8_t graphicControlExt[] = {0x21, 0xF9, 0x04, packed, delay & 0xFF, (delay >> 8), 0xFF, 0x00};
+	const uint8_t graphicControlExt[] = {0x21, 0xF9, 0x04, packed, (uint8_t)(delay & 0xFF), (uint8_t)(delay >> 8), 0xFF, 0x00};
 	fwrite(graphicControlExt, sizeof(graphicControlExt), 1, fp);
 	return true;
 }
