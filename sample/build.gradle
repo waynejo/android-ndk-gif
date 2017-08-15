@@ -5,7 +5,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.2'
+        classpath 'com.android.tools.build:gradle:3.0.0-alpha8'
     }
 }
 
@@ -13,11 +13,14 @@ repositories {
     maven {
         url "http://dl.bintray.com/waynejo/maven"
     }
+    maven {
+        url 'http://repo1.maven.org/maven2'
+    }
 }
 
 android {
     compileSdkVersion 18
-    buildToolsVersion "22.0.1"
+    buildToolsVersion '25.0.2'
 
     sourceSets {
         main {
@@ -28,9 +31,12 @@ android {
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
+            test.root = ['test']
         }
-
-        instrumentTest.setRoot('tests')
+        androidTest {
+            setRoot('tests')
+            java.srcDirs = ['tests/src']
+        }
 
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
@@ -38,12 +44,19 @@ android {
 
     defaultConfig {
         minSdkVersion 18
-        targetSdkVersion 21
+        targetSdkVersion 22
+        compileSdkVersion 22
         versionCode 1
         versionName "0.1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
     dependencies {
         compile('com.waynejo:androidndkgif:0.3.2')
+        androidTestCompile 'com.android.support:support-annotations:24.0.0'
+        androidTestCompile 'com.android.support.test:runner:0.5'
+        androidTestCompile 'com.android.support.test:rules:0.5'
+
+        testCompile 'junit:junit:4.12'
     }
 }
