@@ -5,7 +5,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0-alpha8'
+        classpath 'com.android.tools.build:gradle:2.3.3'
     }
 }
 
@@ -19,7 +19,6 @@ repositories {
 }
 
 android {
-    compileSdkVersion 18
     buildToolsVersion '25.0.2'
 
     sourceSets {
@@ -52,7 +51,7 @@ android {
     }
 
     dependencies {
-        compile('com.waynejo:androidndkgif:0.3.2')
+        compile('com.waynejo:androidndkgif:0.3.3')
         androidTestCompile 'com.android.support:support-annotations:24.0.0'
         androidTestCompile 'com.android.support.test:runner:0.5'
         androidTestCompile 'com.android.support.test:rules:0.5'
