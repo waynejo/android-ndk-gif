@@ -59,9 +59,6 @@ void GCTGifEncoder::release() {
 		imageRect.width = width;
 		imageRect.height = height;
 
-		if (0 != frameNum) {
-			removeSamePixels((uint8_t*)lastPixels, (uint8_t*)pixels, &imageRect);
-		}
 		memcpy(lastPixels, pixels, pixelNum * sizeof(uint32_t));
 
 		reduceColor(cubes, 255, pixels);
@@ -190,7 +187,7 @@ bool GCTGifEncoder::writeLSD()
 	uint8_t packed = (gctFlag << 7) | ((colorResolution - 1) << 4) | (oderedFlag << 3) | gctSize;
 	fwrite(&packed, 1, 1, fp);
 
-	uint8_t backgroundColorIndex = 0;
+	uint8_t backgroundColorIndex = 0xFF;
 	fwrite(&backgroundColorIndex, 1, 1, fp);
 
 	uint8_t aspectRatio = 0;
@@ -229,7 +226,7 @@ bool GCTGifEncoder::writeNetscapeExt()
 
 bool GCTGifEncoder::writeGraphicControlExt(uint16_t delay)
 {
-	uint8_t disposalMethod = 0; // dispose
+	uint8_t disposalMethod = 2; // dispose
 	uint8_t userInputFlag = 0; // User input is not expected.
 	uint8_t transparencyFlag = 1; // Transparent Index is given.
 
