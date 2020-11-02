@@ -250,7 +250,7 @@ bool GifDecoder::skip(DataBlock* dataBlock)
 bool GifDecoder::readBlock(DataBlock* dataBlock, uint8_t* blockSize)
 {
 	dataBlock->read(blockSize, 1);
-	return blockSize <= 0 || dataBlock->read(block, *blockSize);
+	return *blockSize <= 0 || dataBlock->read(block, *blockSize);
 }
 
 bool GifDecoder::readNetscapeExt(DataBlock* dataBlock)
