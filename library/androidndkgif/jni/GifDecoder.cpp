@@ -54,6 +54,7 @@ void GifDecoder::init()
 {
 	loopCount = 1;
 	dispose = 0;
+	lastDispose = 0;
 	transparency = false;
 	delay = 0;
 	frameCount = 0;
@@ -496,7 +497,6 @@ void GifDecoder::setPixels(uint32_t* act)
 {
 	int32_t pixelNum = width * height;
 	uint32_t* dest = new uint32_t[pixelNum];
-	memset(dest, 0, pixelNum * 4);
 	// fill in starting image contents based on last image's dispose code
 	if (lastDispose > 0) {
 		if (lastDispose == 3) {
@@ -525,7 +525,11 @@ void GifDecoder::setPixels(uint32_t* act)
 					}
 				}
 			}
+		} else {
+			memset(dest, 0, pixelNum * 4);
 		}
+	} else {
+		memset(dest, 0, pixelNum * 4);
 	}
 	// copy each source line to the appropriate place in the destination
 	int32_t pass = 1;
