@@ -496,6 +496,7 @@ void GifDecoder::setPixels(uint32_t* act)
 {
 	int32_t pixelNum = width * height;
 	uint32_t* dest = new uint32_t[pixelNum];
+	memset(dest, 0, pixelNum * 4);
 	// fill in starting image contents based on last image's dispose code
 	if (lastDispose > 0) {
 		if (lastDispose == 3) {
