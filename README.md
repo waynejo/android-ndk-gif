@@ -3,7 +3,7 @@ Android NDK GIF Library
 
 GIF library built with ndk and gradle in aar format for usage with android gradle build system.
 
-0.3.3 Change Log
+1.0.1 Change Log
 ========
 * Added Gif Image Iterator for Image decoding.
 * Fixed a problem of residual image on transparent background.
@@ -33,12 +33,12 @@ Remote repository
 ...
 
 repositories {
-    maven { url "http://dl.bintray.com/waynejo/maven" }
+    maven { url 'https://repo1.maven.org/maven2' }
     ...
 }
 
 dependencies {
-    compile('com.waynejo:androidndkgif:0.3.3')
+    implementation ('io.github.waynejo:androidndkgif:1.0.1')
 }
 ```
 
